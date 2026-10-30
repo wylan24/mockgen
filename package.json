@@ -1,0 +1,59 @@
+{
+  "name": "@wylan24/mockgen",
+  "version": "0.1.0",
+  "description": "Turn an OpenAPI spec into a running mock server with realistic, deterministic fake data — one command.",
+  "keywords": [
+    "mock",
+    "openapi",
+    "mock-server",
+    "api",
+    "faker",
+    "testing"
+  ],
+  "license": "MIT",
+  "author": "wylan24",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wylan24/mockgen.git"
+  },
+  "homepage": "https://github.com/wylan24/mockgen#readme",
+  "bugs": "https://github.com/wylan24/mockgen/issues",
+  "type": "module",
+  "bin": {
+    "mockgen": "dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.19"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "serve:example": "npm run build && node dist/cli.js serve examples/petstore.yaml",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@apidevtools/json-schema-ref-parser": "^16.0.5",
+    "@faker-js/faker": "^10.6.0",
+    "randexp": "^0.5.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

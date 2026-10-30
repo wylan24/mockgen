@@ -1,0 +1,19 @@
+type: object
+required: [id, firstName, lastName, email, createdAt]
+properties:
+  id: { type: integer, minimum: 1 }
+  firstName: { type: string }
+  lastName: { type: string }
+  username: { type: string, minLength: 3 }
+  email: { type: string, format: email }
+  avatarUrl: { type: string, format: uri }
+  role: { type: string, enum: [admin, member, viewer] }
+  bio: { type: [string, 'null'], maxLength: 280 }
+  createdAt: { type: string, format: date-time }
+  address:
+    type: object
+    properties:
+      street: { type: string }
+      city: { type: string }
+      zip: { type: string }
+      country: { type: string }

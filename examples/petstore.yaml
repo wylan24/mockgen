@@ -1,0 +1,115 @@
+openapi: 3.1.0
+info:
+  title: Petstore
+  version: 1.0.0
+servers:
+  - url: https://api.example.com/v1
+paths:
+  /users:
+    get:
+      operationId: listUsers
+      responses:
+        '200':
+          description: A page of users
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, page, total]
+                properties:
+                  data:
+                    type: array
+                    minItems: 3
+                    maxItems: 10
+                    items: { $ref: './schemas/user.yaml' }
+                  page: { type: integer, minimum: 1 }
+                  total: { type: integer, minimum: 0 }
+    post:
+      operationId: createUser
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: './schemas/user.yaml' }
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /users/me:
+    get:
+      responses:
+        '200':
+          description: The signed-in user
+          content:
+            application/json:
+              schema: { $ref: './schemas/user.yaml' }
+  /users/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    get:
+      operationId: getUser
+      responses:
+        '200':
+          description: A user
+          content:
+            application/json:
+              schema: { $ref: './schemas/user.yaml' }
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    delete:
+      responses:
+        '204':
+          description: Deleted
+  /pets:
+    get:
+      responses:
+        '200':
+          description: Pets
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Pet' }
+  /pets/{petId}:
+    get:
+      responses:
+        '200':
+          description: A pet
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Pet' }
+              example:
+                id: 1
+                name: Rex
+                species: dog
+                tags: [good-boy]
+components:
+  schemas:
+    Pet:
+      type: object
+      required: [id, name, species]
+      properties:
+        id: { type: integer, minimum: 1 }
+        name: { type: string, example: Biscuit }
+        species: { type: string, enum: [dog, cat, rabbit, parrot] }
+        price: { type: number, minimum: 0 }
+        birthDate: { type: string, format: date }
+        owner:
+          oneOf:
+            - { $ref: './schemas/user.yaml' }
+            - type: 'null'
+        tags:
+          type: array
+          uniqueItems: true
+          items: { type: string, pattern: '^[a-z]+(-[a-z]+)*$' }
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string, enum: [not_found, invalid, conflict] }
+        message: { type: string }
