@@ -1,0 +1,233 @@
+{
+  "$comment": "Real-world OpenAPI 3 specs, pinned to commits. Fetch with `npm run corpus:fetch`.",
+  "specs": [
+    {
+      "name": "stripe",
+      "url": "https://raw.githubusercontent.com/stripe/openapi/51610f5f061c9723730582a7638b8cc0e646640d/openapi/spec3.json"
+    },
+    {
+      "name": "github",
+      "url": "https://raw.githubusercontent.com/github/rest-api-description/066b825d08409eb6c48ddfdd7547c0b70a72dfaf/descriptions/api.github.com/api.github.com.json"
+    },
+    {
+      "name": "twilio-api-v2010",
+      "url": "https://raw.githubusercontent.com/twilio/twilio-oai/d9775142962ea67d5f3d50c5021a23ae6d330c5b/spec/json/twilio_api_v2010.json"
+    },
+    {
+      "name": "oai-petstore",
+      "url": "https://raw.githubusercontent.com/OAI/OpenAPI-Specification/4f86429f134f7e48b6351563549b4502fc69de52/_archive_/schemas/v3.0/pass/petstore.yaml"
+    },
+    {
+      "name": "oai-petstore-expanded",
+      "url": "https://raw.githubusercontent.com/OAI/OpenAPI-Specification/4f86429f134f7e48b6351563549b4502fc69de52/_archive_/schemas/v3.0/pass/petstore-expanded.yaml"
+    },
+    {
+      "name": "swagger-petstore3",
+      "url": "https://raw.githubusercontent.com/swagger-api/swagger-petstore/5cb909fc7780bc708151bce0014939acba8b212a/src/main/resources/openapi.yaml"
+    },
+    {
+      "name": "ably-platform",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/ably.io/platform/1.1.0/openapi.yaml"
+    },
+    {
+      "name": "adyen-CheckoutService",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/adyen.com/CheckoutService/70/openapi.yaml"
+    },
+    {
+      "name": "adyen-ManagementService",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/adyen.com/ManagementService/1/openapi.yaml"
+    },
+    {
+      "name": "amadeus-amadeus-trip-parser",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/amadeus.com/amadeus-trip-parser/3.0.1/openapi.yaml"
+    },
+    {
+      "name": "apideck-crm",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/apideck.com/crm/10.0.0/openapi.yaml"
+    },
+    {
+      "name": "apple-app-store-connect",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/apple.com/app-store-connect/1.4.1/openapi.yaml"
+    },
+    {
+      "name": "asana",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/asana.com/1.0/openapi.yaml"
+    },
+    {
+      "name": "atlassian-jira",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/atlassian.com/jira/1001.0.0-SNAPSHOT/openapi.yaml"
+    },
+    {
+      "name": "bitbucket",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/bitbucket.org/2.0/openapi.yaml"
+    },
+    {
+      "name": "box",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/box.com/2.0.0/openapi.yaml"
+    },
+    {
+      "name": "bunq",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/bunq.com/1.0/openapi.yaml"
+    },
+    {
+      "name": "circleci",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/circleci.com/v1/openapi.yaml"
+    },
+    {
+      "name": "codat-accounting",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/codat.io/accounting/2.1.0/openapi.yaml"
+    },
+    {
+      "name": "digitalocean",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/digitalocean.com/2.0/openapi.yaml"
+    },
+    {
+      "name": "docusign",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/docusign.net/v2.1/openapi.yaml"
+    },
+    {
+      "name": "ebay-sell-fulfillment",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/ebay.com/sell-fulfillment/v1.20.0/openapi.yaml"
+    },
+    {
+      "name": "linode",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/linode.com/4.151.1/openapi.yaml"
+    },
+    {
+      "name": "nexmo-verify",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/nexmo.com/verify/1.2.4/openapi.yaml"
+    },
+    {
+      "name": "notion",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/notion.com/1.0.0/openapi.yaml"
+    },
+    {
+      "name": "nytimes-books_api",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/nytimes.com/books_api/3.0.0/openapi.yaml"
+    },
+    {
+      "name": "openai",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/openai.com/1.2.0/openapi.yaml"
+    },
+    {
+      "name": "opensuse-obs",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/opensuse.org/obs/2.10.50/openapi.yaml"
+    },
+    {
+      "name": "pandascore",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/pandascore.co/2.23.1/openapi.yaml"
+    },
+    {
+      "name": "personio-personnel",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/personio.de/personnel/1.0/openapi.yaml"
+    },
+    {
+      "name": "plaid",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/plaid.com/2020-09-14_1.345.1/openapi.yaml"
+    },
+    {
+      "name": "rebilly",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/rebilly.com/2.1/openapi.yaml"
+    },
+    {
+      "name": "sendgrid",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/sendgrid.com/1.0.0/openapi.yaml"
+    },
+    {
+      "name": "shipengine",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/shipengine.com/1.1.202304191404/openapi.yaml"
+    },
+    {
+      "name": "shutterstock",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/shutterstock.com/1.1.32/openapi.yaml"
+    },
+    {
+      "name": "slack",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/slack.com/1.7.0/openapi.yaml"
+    },
+    {
+      "name": "snyk",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/snyk.io/1.0.0/openapi.yaml"
+    },
+    {
+      "name": "spotify-sonallux",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/spotify.com/sonallux/2023.2.27/openapi.yaml"
+    },
+    {
+      "name": "stackexchange",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/stackexchange.com/2.0/openapi.yaml"
+    },
+    {
+      "name": "telnyx",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/telnyx.com/2.0.0/openapi.yaml"
+    },
+    {
+      "name": "thebluealliance",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/thebluealliance.com/3.8.2/openapi.yaml"
+    },
+    {
+      "name": "ticketmaster-discovery",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/ticketmaster.com/discovery/v2/openapi.yaml"
+    },
+    {
+      "name": "traccar",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/traccar.org/5.6/openapi.yaml"
+    },
+    {
+      "name": "trello",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/trello.com/1.0/openapi.yaml"
+    },
+    {
+      "name": "twitter-current",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/twitter.com/current/2.62/openapi.yaml"
+    },
+    {
+      "name": "up",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/up.com.au/v1/openapi.yaml"
+    },
+    {
+      "name": "va-gov-facilities",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/va.gov/facilities/0.0.1/openapi.yaml"
+    },
+    {
+      "name": "vercel",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/vercel.com/0.0.1/openapi.yaml"
+    },
+    {
+      "name": "webflow",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/webflow.com/2023-03-23T154040Z/openapi.yaml"
+    },
+    {
+      "name": "wiremock-admin",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/wiremock.org/admin/2.35.0/openapi.yaml"
+    },
+    {
+      "name": "wordnik",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/wordnik.com/4.0/openapi.yaml"
+    },
+    {
+      "name": "xero-xero_assets",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/xero.com/xero_assets/2.9.4/openapi.yaml"
+    },
+    {
+      "name": "youneedabudget",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/youneedabudget.com/1.0.0/openapi.yaml"
+    },
+    {
+      "name": "zuora",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/zuora.com/2021-08-20/openapi.yaml"
+    },
+    {
+      "name": "telegram",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/telegram.org/5.0.0/openapi.yaml"
+    },
+    {
+      "name": "visualcrossing-weather",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/visualcrossing.com/weather/4.6/openapi.yaml"
+    },
+    {
+      "name": "sportsdata-nba-v3-scores",
+      "url": "https://raw.githubusercontent.com/APIs-guru/openapi-directory/f04b8d0bcd39c52e1cf3ad7a5fe744709832ae49/APIs/sportsdata.io/nba-v3-scores/1.0/openapi.yaml"
+    }
+  ]
+}

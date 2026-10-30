@@ -1,4 +1,5 @@
-import { generate, mergeAllOf, typeOf } from './generate.js';
+import { generate } from './generate.js';
+import { fits, mergeAllOf, typeOf } from './schema.js';
 import { normalizeName } from './heuristics.js';
 import type { MockRoute, Schema } from './model.js';
 
@@ -200,44 +201,6 @@ export function encodeCursor(offset: number): string {
 function decodeCursor(cursor: string): number | undefined {
   const m = /^o:(\d+)$/.exec(Buffer.from(cursor, 'base64url').toString());
   return m ? Number(m[1]) : undefined;
-}
-
-/** Cheap check that a value can stand in for a schema position without breaking validation. */
-export function fits(value: unknown, schema: Schema | undefined): boolean {
-  if (!schema) return false;
-  if (Array.isArray(schema.enum)) return schema.enum.some((e: unknown) => JSON.stringify(e) === JSON.stringify(value));
-  if ('const' in schema) return JSON.stringify(schema.const) === JSON.stringify(value);
-  const alternatives = schema.oneOf ?? schema.anyOf;
-  if (Array.isArray(alternatives)) return alternatives.some((s: Schema) => fits(value, s));
-  if (schema.allOf) return fits(value, mergeAllOf(schema));
-
-  const types: string[] = Array.isArray(schema.type) ? schema.type : schema.type ? [schema.type] : [];
-  if (schema.nullable) types.push('null');
-  if (!types.length) return value !== undefined;
-  return types.some((t) => {
-    switch (t) {
-      case 'null':
-        return value === null;
-      case 'integer':
-        return Number.isInteger(value) && inRange(value as number, schema);
-      case 'number':
-        return typeof value === 'number' && inRange(value, schema);
-      case 'string':
-        return typeof value === 'string' && value.length >= (schema.minLength ?? 0) && value.length <= (schema.maxLength ?? Infinity) && (schema.format !== 'uri' || URL.canParse(value));
-      case 'boolean':
-        return typeof value === 'boolean';
-      case 'array':
-        return Array.isArray(value);
-      case 'object':
-        return !!value && typeof value === 'object' && !Array.isArray(value);
-      default:
-        return false;
-    }
-  });
-}
-
-function inRange(n: number, s: Schema): boolean {
-  return n >= (s.minimum ?? -Infinity) && n <= (s.maximum ?? Infinity);
 }
 
 function firstInt(query: URLSearchParams, names: string[]): number | undefined {

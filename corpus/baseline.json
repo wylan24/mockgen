@@ -1,0 +1,55 @@
+{
+  "$comment": "Known invalid responses per spec. See scripts/corpus.ts.",
+  "specs": {
+    "apple-app-store-connect": {
+      "invalid": 2398,
+      "cause": "mockgen",
+      "note": "Mostly a spec bug: oneOf lists the same schema object twice (included[], errors[].source). Undiagnosed: GET /v1/appInfos/{id} included[].type enum mismatch."
+    },
+    "codat-accounting": {
+      "invalid": 20,
+      "cause": "spec",
+      "note": "allOf: [{type: string}, {type: null}] for nullable fields (e.g. currency) is unsatisfiable"
+    },
+    "github": {
+      "invalid": 3,
+      "cause": "spec",
+      "note": "oneOf error bodies (409/422 on contents and blobs) whose branches have no required fields; any realistic object matches both"
+    },
+    "linode": {
+      "invalid": 56,
+      "cause": "mockgen",
+      "note": "Spec bugs: identical Credit Card / Google Pay oneOf branches; label pattern (?!..) only admits 2 characters but minLength is 3. Undiagnosed: backups automatic[].type enum mismatch."
+    },
+    "nexmo-verify": {
+      "invalid": 7,
+      "cause": "spec",
+      "note": "oneOf error bodies whose branches are all-optional objects with the same fields"
+    },
+    "rebilly": {
+      "invalid": 35,
+      "cause": "mockgen",
+      "note": "Undiagnosed: kyc-documents oneOf over document types matches 0 or 2 branches; ready-to-pay feature oneOf."
+    },
+    "shipengine": {
+      "invalid": 183,
+      "cause": "mockgen",
+      "note": "Spec bug: allOf members each set additionalProperties: false (links, advanced_options). Undiagnosed: url-format hrefs, address_residential_indicator enum, created_at pattern."
+    },
+    "telnyx": {
+      "invalid": 4,
+      "cause": "spec",
+      "note": "detail_records oneOf branches have no required fields and rely on discriminator, which JSON Schema validation ignores"
+    },
+    "vercel": {
+      "invalid": 37,
+      "cause": "spec",
+      "note": "fields declared {type: \"null\", oneOf: [string, number]} (a broken 3.0 nullable conversion) are unsatisfiable"
+    },
+    "zuora": {
+      "invalid": 4,
+      "cause": "spec",
+      "note": "object definition allOf gives `origin` contradicting enums (system vs custom) across members"
+    }
+  }
+}

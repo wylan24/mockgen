@@ -91,7 +91,7 @@ export async function loadSamples(dir: string): Promise<MockModel> {
   }
 
   if (!routes.length) warnings.push(`${root}: no sample files found`);
-  return { title: path.basename(root), version: '', basePath: '', routes: sortRoutes(routes), warnings, sources: [root] };
+  return { openapi: '3.1.0', title: path.basename(root), version: '', basePath: '', routes: sortRoutes(routes), warnings, sources: [root] };
 }
 
 async function listJsonFiles(dir: string): Promise<string[]> {

@@ -7,6 +7,7 @@ export { inferSchema, SchemaInferrer } from './infer.js';
 export { loadSource } from './load.js';
 export { loadOpenApi, SpecLoadError } from './openapi.js';
 export { formatOpenApi, loadSamples, parseSampleName, toOpenApi } from './samples.js';
+export { ResponseValidator, toJsonSchema, type ValidationResult } from './validate.js';
 export { respond, type MockResult, type MockServer, type MockServerOptions, type RespondInput } from './server.js';
 
 /**

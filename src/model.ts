@@ -26,6 +26,8 @@ export interface MockRoute {
 }
 
 export interface MockModel {
+  /** OpenAPI version the schemas are written in (`3.0.x` or `3.1.x`); sample folders infer 3.1. */
+  openapi: string;
   title: string;
   version: string;
   /** Path prefix from `servers[0].url`, e.g. `/v1`; requests may include or omit it. */

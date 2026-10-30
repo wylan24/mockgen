@@ -7,6 +7,7 @@ import type { MockModel } from './model.js';
 import { loadSource } from './load.js';
 import { formatOpenApi, loadSamples } from './samples.js';
 import { createMockServer, respond } from './server.js';
+import { ResponseValidator } from './validate.js';
 
 const HELP = `mockgen — turn an OpenAPI spec or a folder of sample responses into a running mock server
 
@@ -152,18 +153,28 @@ async function infer(dir: string, out: string | undefined) {
 async function validate(spec: string, seed: number) {
   const model = await loadSource(spec);
   printWarnings(model);
+  const validator = new ResponseValidator(model.openapi);
   let responses = 0;
+  let skipped = 0;
+  const invalid: string[] = [];
   for (const r of model.routes) {
     for (const res of r.responses) {
+      if (!res.schema || res.hasExample) continue;
+      const label = `${r.method} ${r.path} ${res.status}`;
+      const value = generate(res.schema, { seed, key: label });
       try {
-        generate(res.schema, { seed, key: `${r.method} ${r.path} ${res.status}` });
+        const result = validator.validate(res.schema, value);
+        if (!result.valid) invalid.push(`${label}: ${result.errors}`);
         responses++;
-      } catch (err) {
-        fail(`${r.method} ${r.path} ${res.status}: ${(err as Error).message}`);
+      } catch {
+        skipped++; // The schema itself can't be compiled (e.g. a non-JavaScript regex).
       }
     }
   }
-  console.log(`${styleText('green', '✔')} ${model.title}: ${model.routes.length} routes, ${responses} responses generated, ${model.warnings.length} warnings`);
+  for (const line of invalid) console.error(styleText('red', `✖ ${line}`));
+  const summary = `${model.title}: ${model.routes.length} routes, ${responses - invalid.length}/${responses} generated responses valid${skipped ? `, ${skipped} schemas not checkable` : ''}, ${model.warnings.length} warnings`;
+  if (invalid.length) fail(summary);
+  console.log(`${styleText('green', '✔')} ${summary}`);
 }
 
 function printWarnings(model: MockModel) {

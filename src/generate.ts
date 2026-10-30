@@ -1,6 +1,7 @@
 import { Faker, base, en } from '@faker-js/faker';
 import RandExp from 'randexp';
 import type { Schema } from './model.js';
+import { countMatches, fits, mergeAllOf, typeOf } from './schema.js';
 import { looksLikeDate, looksLikeDateTime, numberByName, stringByName, type RecordContext } from './heuristics.js';
 
 export interface GenerateOptions {
@@ -18,9 +19,19 @@ const REF_DATE = new Date('2026-01-01T00:00:00.000Z');
 const faker = new Faker({ locale: [en, base] });
 faker.setDefaultRefDate(REF_DATE);
 
+// Filling every optional field of every nested object explodes on big specs (Stripe
+// objects nest dozens of expandable objects). Past this depth, or once this many
+// values have been generated, only required fields and minItems are filled.
+const RICH_DEPTH = 3;
+const VALUE_BUDGET = 2000;
+
 interface Ctx {
   depth: number;
   maxDepth: number;
+  /** Shared across one `generate` call. */
+  budget: { values: number };
+  /** Only required fields, e.g. to tell apart overlapping `oneOf` branches. */
+  minimal?: boolean;
   name?: string;
   record?: RecordContext;
 }
@@ -28,25 +39,26 @@ interface Ctx {
 /** Generate a realistic, deterministic value that satisfies `schema`. */
 export function generate(schema: Schema | undefined, opts: GenerateOptions = {}): unknown {
   faker.seed(hash(`${opts.seed ?? 1}:${opts.key ?? ''}`));
-  return gen(schema ?? {}, { depth: 0, maxDepth: opts.maxDepth ?? 8 });
+  return gen(schema ?? {}, { depth: 0, maxDepth: opts.maxDepth ?? 8, budget: { values: VALUE_BUDGET } });
 }
 
 function gen(schema: Schema, ctx: Ctx): unknown {
-  if (schema.example !== undefined) return structuredClone(schema.example);
-  if (Array.isArray(schema.examples) && schema.examples.length) return structuredClone(schema.examples[0]);
+  // Real examples beat fake data, unless the spec's example contradicts its own schema.
+  if (schema.example !== undefined && fits(schema.example, schema)) return structuredClone(schema.example);
+  const example = Array.isArray(schema.examples) ? schema.examples.find((e: unknown) => fits(e, schema)) : undefined;
+  if (example !== undefined) return structuredClone(example);
   if ('const' in schema) return schema.const;
   if (Array.isArray(schema.enum) && schema.enum.length) {
-    const options = schema.enum.filter((v: unknown) => v !== null);
-    return faker.helpers.arrayElement(options.length ? options : schema.enum);
+    // Specs sometimes list enum values their own pattern or maxLength rejects.
+    const { enum: values, ...rest } = schema;
+    const valid = values.filter((v: unknown) => v !== null && fits(v, rest));
+    const options = valid.length ? valid : values.filter((v: unknown) => v !== null);
+    return faker.helpers.arrayElement(options.length ? options : values);
   }
 
   if (Array.isArray(schema.allOf)) return gen(mergeAllOf(schema), ctx);
-  const choices = schema.oneOf ?? schema.anyOf;
-  if (Array.isArray(choices) && choices.length) {
-    const { oneOf, anyOf, ...rest } = schema;
-    const pick = faker.helpers.arrayElement(choices as Schema[]);
-    return gen(Object.keys(rest).length ? mergeAllOf({ allOf: [rest, pick] }) : pick, ctx);
-  }
+  const choices: Schema[] | undefined = schema.oneOf ?? schema.anyOf;
+  if (Array.isArray(choices) && choices.length) return genChoice(schema, choices, Array.isArray(schema.oneOf), ctx);
 
   switch (typeOf(schema)) {
     case 'null':
@@ -68,19 +80,43 @@ function gen(schema: Schema, ctx: Ctx): unknown {
   }
 }
 
-export function typeOf(schema: Schema): string | undefined {
-  let t = schema.type;
-  if (Array.isArray(t)) {
-    // 3.1 nullable: prefer the non-null type so data looks real.
-    const nonNull = t.filter((x: string) => x !== 'null');
-    t = nonNull[0] ?? 'null';
+function lean(ctx: Ctx): boolean {
+  return ctx.minimal === true || ctx.depth > RICH_DEPTH || ctx.budget.values <= 0;
+}
+
+/**
+ * Pick a `oneOf`/`anyOf` branch and generate from it. Branches often overlap (two
+ * object shapes with no required fields both accept `{}`), so each candidate is
+ * checked: it must satisfy its branch, and for `oneOf` no other branch.
+ */
+function genChoice(schema: Schema, choices: Schema[], exclusive: boolean, ctx: Ctx): unknown {
+  const { oneOf, anyOf, ...rest } = schema;
+  // Deep in the tree, prefer the cheapest branch (`string` over an expanded object).
+  const order = lean(ctx) ? [...choices].sort((a, b) => cost(a) - cost(b)) : faker.helpers.shuffle([...choices]);
+  let fallback: unknown;
+  // Second pass: a full object often satisfies a loose sibling branch too, while
+  // the bare required fields of the same branch don't.
+  for (const attempt of [ctx, { ...ctx, minimal: true }]) {
+    for (const branch of order.slice(0, 4)) {
+      const s = Object.keys(rest).length ? mergeAllOf({ allOf: [rest, branch] }) : branch;
+      const value = gen(s, attempt);
+      if (fallback === undefined) fallback = value;
+      if (!fits(value, s)) continue;
+      if (exclusive && choices.length > 1 && countMatches(value, choices, 0, 2) !== 1) continue;
+      return value;
+    }
+    if (!exclusive) break;
   }
-  if (t) return t;
-  if (schema.properties || schema.additionalProperties) return 'object';
-  if (schema.items) return 'array';
-  if (schema.format || schema.pattern || schema.minLength !== undefined) return 'string';
-  if (schema.minimum !== undefined || schema.maximum !== undefined) return 'number';
-  return undefined;
+  return fallback;
+}
+
+function cost(s: Schema): number {
+  if (s.enum || 'const' in s) return 0;
+  const t = typeOf(s);
+  if (t === 'object') return 2 + (s.required?.length ?? 0);
+  if (t === 'array') return 2 + (s.minItems ?? 0);
+  if (s.allOf || s.oneOf || s.anyOf) return 3;
+  return t ? 1 : 3;
 }
 
 function genObject(schema: Schema, ctx: Ctx): Record<string, unknown> {
@@ -88,13 +124,22 @@ function genObject(schema: Schema, ctx: Ctx): Record<string, unknown> {
   if (ctx.depth >= ctx.maxDepth) return out;
 
   const props: Record<string, Schema> = schema.properties ?? {};
+  const required = new Set<string>(schema.required ?? []);
   const record: RecordContext = { siblings: new Set(Object.keys(props).map((k) => k.toLowerCase())), owner: ctx.name };
   for (const [name, propSchema] of Object.entries(props)) {
     if (propSchema.writeOnly) continue;
+    if (!required.has(name) && lean(ctx)) continue;
+    ctx.budget.values--;
     out[name] = gen(propSchema, { ...ctx, depth: ctx.depth + 1, name, record });
   }
 
-  if (!schema.properties && schema.additionalProperties && typeof schema.additionalProperties === 'object') {
+  // Required keys the schema never describes still have to be present.
+  const extra = typeof schema.additionalProperties === 'object' ? schema.additionalProperties : {};
+  for (const name of required) {
+    if (!(name in out) && !props[name]?.writeOnly) out[name] = gen(extra, { ...ctx, depth: ctx.depth + 1, name, record });
+  }
+
+  if (!schema.properties && schema.additionalProperties && typeof schema.additionalProperties === 'object' && !lean(ctx)) {
     const count = faker.number.int({ min: 1, max: 3 });
     for (let i = 0; i < count; i++) {
       out[faker.word.noun()] = gen(schema.additionalProperties, { ...ctx, depth: ctx.depth + 1, name: undefined });
@@ -107,7 +152,7 @@ function genArray(schema: Schema, ctx: Ctx): unknown[] {
   const min = schema.minItems ?? 0;
   if (ctx.depth >= ctx.maxDepth) return [];
   const max = Math.max(min, schema.maxItems ?? Math.max(min, 5));
-  const count = faker.number.int({ min: Math.max(min, Math.min(2, max)), max });
+  const count = lean(ctx) ? min : faker.number.int({ min: Math.max(min, Math.min(2, max)), max });
   const items: Schema = schema.items ?? {};
   // Items of a `users` array are users, so keep the singular name as the hint.
   const name = ctx.name?.replace(/ies$/, 'y').replace(/(ss|x|sh|ch|us)es$/, '$1').replace(/([^s])s$/, '$1');
@@ -219,6 +264,16 @@ function byFormat(format: string | undefined): string | undefined {
       return faker.string.alphanumeric(16);
     case 'password':
       return faker.internet.password({ length: 16 });
+    case 'json-pointer':
+      return `/${faker.word.noun()}/${faker.number.int(9)}`;
+    case 'relative-json-pointer':
+      return `0/${faker.word.noun()}`;
+    case 'uri-template':
+      return `https://${faker.internet.domainName()}/items/{id}`;
+    case 'iri-reference':
+      return `/${faker.lorem.slug(2)}`;
+    case 'regex':
+      return '^[a-z0-9-]+$';
     default:
       return undefined;
   }
@@ -242,21 +297,6 @@ function byPattern(pattern: string | undefined): string | undefined {
     // Unsupported regex features fall through to a plain string.
   }
   return undefined;
-}
-
-/** Shallow-merge `allOf` members into one schema: properties and required lists combine. */
-export function mergeAllOf(schema: Schema): Schema {
-  const { allOf, ...rest } = schema;
-  const merged: Schema = { ...rest };
-  for (const part of allOf as Schema[]) {
-    const flat = part.allOf ? mergeAllOf(part) : part;
-    for (const [k, v] of Object.entries(flat)) {
-      if (k === 'properties') merged.properties = { ...merged.properties, ...v };
-      else if (k === 'required') merged.required = [...new Set([...(merged.required ?? []), ...v])];
-      else if (!(k in merged)) merged[k] = v;
-    }
-  }
-  return merged;
 }
 
 function isoDate(d: Date): string {

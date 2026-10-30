@@ -2,7 +2,8 @@ import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { buildPage, findDetailRoute, findListShape } from './collections.js';
 import { generate } from './generate.js';
-import type { MockModel, MockResponse, MockRoute } from './model.js';
+import type { MockModel, MockResponse, MockRoute, Schema } from './model.js';
+import { fits, mergeAllOf } from './schema.js';
 
 export interface MockServerOptions {
   model: MockModel;
@@ -165,7 +166,7 @@ export function respond(model: MockModel, input: RespondInput): MockResult {
     }));
   }
 
-  if (isRecord(body)) applyPathParams(body, route, params);
+  if (isRecord(body) && response.schema) applyPathParams(body, response.schema, route, params);
   return { status, body, headers };
 }
 
@@ -195,14 +196,15 @@ function pickResponse(responses: MockResponse[], forced?: number): MockResponse 
   return explicit.find((r) => r.status >= 200 && r.status < 300) ?? responses.find((r) => r.isDefault) ?? explicit[0];
 }
 
-/** `GET /users/42` returns a user whose `id` is 42. */
-function applyPathParams(body: Record<string, unknown>, route: MockRoute, params: Record<string, string>) {
+/** `GET /users/42` returns a user whose `id` is 42 — when 42 is a valid `id` for the schema. */
+function applyPathParams(body: Record<string, unknown>, schema: Schema, route: MockRoute, params: Record<string, string>) {
+  const props: Record<string, Schema> = (schema.allOf ? mergeAllOf(schema) : schema).properties ?? {};
   const last = route.paramNames.at(-1);
   for (const [name, raw] of Object.entries(params)) {
     const key = name in body ? name : name === last && 'id' in body ? 'id' : undefined;
     if (!key) continue;
-    const current = body[key];
-    body[key] = typeof current === 'number' && raw.trim() !== '' && !Number.isNaN(Number(raw)) ? Number(raw) : typeof current === 'number' ? current : raw;
+    const value = raw.trim() !== '' && typeof body[key] === 'number' ? Number(raw) : raw;
+    if (fits(value, props[key])) body[key] = value;
   }
 }
 

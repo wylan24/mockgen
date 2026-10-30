@@ -23,7 +23,7 @@ You get a server on `localhost:4010` that returns schema-valid, human-looking da
 ```bash
 mockgen serve <spec|dir>             # Start a mock server (hot-reloads on change)
 mockgen generate <spec|dir> [route]  # Print generated responses, e.g. "GET /users/1"
-mockgen validate <spec|dir>          # Load the input and generate every response
+mockgen validate <spec|dir>          # Generate every response and check it against its schema
 mockgen infer <dir> [-o openapi.yaml]  # Write the schema inferred from samples as OpenAPI 3.1
 ```
 
@@ -105,8 +105,20 @@ When you're ready for a real spec, `mockgen infer ./samples -o openapi.yaml` wri
 - [x] Mock server: CORS, request log, status/latency simulation, hot reload
 - [x] Sample-response input (folder of JSON files → inferred schema) and `mockgen infer`
 - [x] List/detail consistency (`/users/{id}` returns the user from `/users`) and pagination
-- [ ] Spec corpus of 50+ real-world APIs in CI
+- [x] Spec corpus of 50+ real-world APIs in CI (4 specs still have mockgen-caused failures; see `corpus/baseline.json`)
 - [ ] Stateful CRUD, `mock.config.ts` overrides, Docker image
+
+## Quality: the spec corpus
+
+mockgen is tested against 57 real-world OpenAPI specs (Stripe, GitHub, Twilio, Box, Jira, DocuSign, Plaid, Petstore variants and more from [APIs.guru](https://apis.guru)), pinned to commits in [corpus/specs.json](corpus/specs.json). Every spec must load, and every generated response is validated against its schema with Ajv.
+
+```bash
+npm run corpus:fetch        # download the specs once (~60 MB, cached in corpus/.cache)
+npm run corpus              # load + generate + validate everything
+npm run corpus -- stripe    # just one spec
+```
+
+Real specs contain schemas no value can satisfy (identical `oneOf` branches, `allOf: [string, null]`, conflicting enums). [corpus/baseline.json](corpus/baseline.json) records each spec's known failures and whether the spec or mockgen is at fault. CI fails if any spec gets worse; `npm run corpus -- --strict` (the 1.0 release gate) also fails while any mockgen-caused failure remains.
 
 ## Development
 

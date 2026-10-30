@@ -58,6 +58,7 @@ export async function loadOpenApi(file: string): Promise<MockModel> {
   sortRoutes(routes);
 
   return {
+    openapi: doc.openapi,
     title: doc.info?.title ?? path.basename(abs),
     version: doc.info?.version ?? '',
     basePath: basePathOf(doc.servers?.[0]?.url),
