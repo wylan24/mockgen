@@ -1,5 +1,6 @@
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { buildPage, findDetailRoute, findListShape } from './collections.js';
 import { generate } from './generate.js';
 import type { MockModel, MockResponse, MockRoute } from './model.js';
 
@@ -9,6 +10,8 @@ export interface MockServerOptions {
   seed?: number;
   /** Delay every response by this many milliseconds. Overridden per request by `X-Mock-Delay`. */
   delay?: number;
+  /** Size of every list endpoint's collection, paged through with `?page=`/`?limit=`. Default 50. */
+  records?: number;
   /** Called once per request with a one-line summary. */
   log?: (line: string) => void;
 }
@@ -53,6 +56,9 @@ export function createMockServer(options: MockServerOptions): MockServer {
         path: url.pathname,
         seed,
         status: header(req, 'x-mock-status') ?? url.searchParams.get('__status') ?? undefined,
+        query: url.searchParams,
+        origin: req.headers.host ? `http://${req.headers.host}` : undefined,
+        records: options.records,
       });
     }
 
@@ -99,6 +105,12 @@ export interface RespondInput {
   seed?: number;
   /** Force a status code, e.g. from `X-Mock-Status`. */
   status?: string | number;
+  /** Query string; drives pagination on list endpoints. */
+  query?: URLSearchParams | string;
+  /** `http://host:port`, used to build absolute next/prev links. */
+  origin?: string;
+  /** Collection size for list endpoints. Default 50. */
+  records?: number;
 }
 
 /** Produce the mock response for one request. Pure apart from the generator's seed. */
@@ -126,8 +138,35 @@ export function respond(model: MockModel, input: RespondInput): MockResult {
   if (response.hasExample) body = structuredClone(response.example);
   else if (response.schema) body = generate(response.schema, { seed: input.seed, key: `${route.method} ${input.path} ${status}` });
 
-  if (body && typeof body === 'object' && !Array.isArray(body)) applyPathParams(body as Record<string, unknown>, route, params);
-  return { status, body, headers: {} };
+  let headers: Record<string, string> = {};
+  // List endpoints (not `/users/{id}`) page through a stable collection.
+  const shape = route.method === 'GET' && !response.hasExample && status < 300 && !route.path.endsWith('}') ? findListShape(response.schema) : undefined;
+  if (shape) {
+    const requestPath = input.path.replace(/(.)\/$/, '$1');
+    const detailRoute = findDetailRoute(model.routes, route);
+    const detailResponse = detailRoute && pickResponse(detailRoute.responses);
+    const linked = !!detailResponse?.schema && !detailResponse.hasExample;
+    ({ body, headers } = buildPage({
+      schema: response.schema!,
+      requestPath,
+      query: new URLSearchParams(input.query ?? ''),
+      origin: input.origin,
+      seed: input.seed,
+      shape,
+      body,
+      total: input.records ?? 50,
+      idKey: detailRoute?.paramNames.at(-1),
+      detail: linked
+        ? (id) => {
+            const r = respond(model, { method: 'GET', path: `${requestPath}/${encodeURIComponent(String(id))}`, seed: input.seed });
+            return r.status < 300 && isRecord(r.body) ? r.body : undefined;
+          }
+        : undefined,
+    }));
+  }
+
+  if (isRecord(body)) applyPathParams(body, route, params);
+  return { status, body, headers };
 }
 
 function findRoute(model: MockModel, method: string, rawPath: string) {
@@ -165,6 +204,10 @@ function applyPathParams(body: Record<string, unknown>, route: MockRoute, params
     const current = body[key];
     body[key] = typeof current === 'number' && raw.trim() !== '' && !Number.isNaN(Number(raw)) ? Number(raw) : typeof current === 'number' ? current : raw;
   }
+}
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return !!v && typeof v === 'object' && !Array.isArray(v);
 }
 
 function errorResult(status: number, message: string): MockResult {

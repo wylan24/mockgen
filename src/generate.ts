@@ -68,7 +68,7 @@ function gen(schema: Schema, ctx: Ctx): unknown {
   }
 }
 
-function typeOf(schema: Schema): string | undefined {
+export function typeOf(schema: Schema): string | undefined {
   let t = schema.type;
   if (Array.isArray(t)) {
     // 3.1 nullable: prefer the non-null type so data looks real.
@@ -245,7 +245,7 @@ function byPattern(pattern: string | undefined): string | undefined {
 }
 
 /** Shallow-merge `allOf` members into one schema: properties and required lists combine. */
-function mergeAllOf(schema: Schema): Schema {
+export function mergeAllOf(schema: Schema): Schema {
   const { allOf, ...rest } = schema;
   const merged: Schema = { ...rest };
   for (const part of allOf as Schema[]) {

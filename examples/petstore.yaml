@@ -19,7 +19,6 @@ paths:
                 properties:
                   data:
                     type: array
-                    minItems: 3
                     maxItems: 10
                     items: { $ref: './schemas/user.yaml' }
                   page: { type: integer, minimum: 1 }

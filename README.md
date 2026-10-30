@@ -33,6 +33,7 @@ mockgen infer <dir> [-o openapi.yaml]  # Write the schema inferred from samples 
 | `-H, --host` | `127.0.0.1` | Host to bind |
 | `-s, --seed` | `1` | Seed for generated data |
 | `-d, --delay` | `0` | Delay every response, e.g. `300ms` |
+| `-r, --records` | `50` | Records in every list endpoint's collection |
 | `--no-watch` | | Disable hot reload |
 | `-o, --out` | stdout | `infer` output file (`.yaml` or `.json`) |
 
@@ -45,6 +46,22 @@ curl -H 'X-Mock-Status: 404' localhost:4010/users/1   # the spec's 404 response
 curl 'localhost:4010/users/1?__status=503'            # undocumented codes work too
 curl -H 'X-Mock-Delay: 1500' localhost:4010/users     # slow this one down
 ```
+
+### Lists and pagination
+
+Every list endpoint — a bare array of objects, or an object wrapping one (`data`, `items`, `results`, …) — is a window onto a stable collection of 50 records (`--records`):
+
+```bash
+curl 'localhost:4010/users?page=2&limit=20'   # also per_page, pageSize, offset/skip
+curl 'localhost:4010/users?cursor=bzoyMA'     # any cursor mockgen handed out works
+```
+
+- Integer ids are sequential (`1…50`), so page 2 of 10 is ids 11–20, every time.
+- When the spec also has `GET /users/{id}`, each list item is the same record that route returns.
+- Wrapper fields are filled by name, including nested ones like `meta.pagination`: `total`, `page`, `perPage`, `totalPages`, `hasMore`, `next`/`prev` (page number, URL or cursor, and `null` on the last page).
+- Responses carry `X-Total-Count` and a `Link` header with `next`/`prev`.
+
+A page past the end is empty, even if the schema sets `minItems`.
 
 ### In tests
 
@@ -87,7 +104,7 @@ When you're ready for a real spec, `mockgen infer ./samples -o openapi.yaml` wri
 - [x] Deterministic, field-name-aware data generation honoring schema constraints
 - [x] Mock server: CORS, request log, status/latency simulation, hot reload
 - [x] Sample-response input (folder of JSON files → inferred schema) and `mockgen infer`
-- [ ] List/detail consistency (`/users/{id}` returns the user from `/users`) and pagination
+- [x] List/detail consistency (`/users/{id}` returns the user from `/users`) and pagination
 - [ ] Spec corpus of 50+ real-world APIs in CI
 - [ ] Stateful CRUD, `mock.config.ts` overrides, Docker image
 

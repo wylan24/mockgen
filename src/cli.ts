@@ -24,6 +24,7 @@ Options
   -H, --host <host>   Host to bind (default 127.0.0.1)
   -s, --seed <n>      Seed for generated data (default 1)
   -d, --delay <ms>    Delay every response, e.g. 300 or 300ms
+  -r, --records <n>   Records per list endpoint, paged with ?page=&limit= (default 50)
   -o, --out <file>    infer: write here instead of stdout (.yaml or .json)
       --no-watch      Disable hot reload
   -h, --help          Show this help
@@ -32,6 +33,7 @@ Options
 Per request
   X-Mock-Status: 404  (or ?__status=404)   Return that status instead of the success response
   X-Mock-Delay: 500   (or ?__delay=500)    Delay this response
+  ?page=2&limit=20, ?offset=40, ?cursor=…  Page through list endpoints
 `;
 
 async function main(argv: string[]) {
@@ -45,6 +47,7 @@ async function main(argv: string[]) {
       seed: { type: 'string', short: 's', default: '1' },
       delay: { type: 'string', short: 'd', default: '0' },
       out: { type: 'string', short: 'o' },
+      records: { type: 'string', short: 'r', default: '50' },
       watch: { type: 'boolean', default: true },
       help: { type: 'boolean', short: 'h' },
       version: { type: 'boolean', short: 'v' },
@@ -59,9 +62,9 @@ async function main(argv: string[]) {
   const seed = int(values.seed, '--seed');
   switch (command) {
     case 'serve':
-      return serve(spec, { port: int(values.port, '--port'), host: values.host, seed, delay: int(values.delay.replace(/ms$/, ''), '--delay'), watch: values.watch });
+      return serve(spec, { port: int(values.port, '--port'), host: values.host, seed, delay: int(values.delay.replace(/ms$/, ''), '--delay'), watch: values.watch, records: int(values.records, '--records') });
     case 'generate':
-      return generateCmd(spec, rest.join(' '), seed);
+      return generateCmd(spec, rest.join(' '), seed, int(values.records, '--records'));
     case 'validate':
       return validate(spec, seed);
     case 'infer':
@@ -71,11 +74,11 @@ async function main(argv: string[]) {
   }
 }
 
-async function serve(spec: string, opts: { port: number; host: string; seed: number; delay: number; watch: boolean }) {
+async function serve(spec: string, opts: { port: number; host: string; seed: number; delay: number; watch: boolean; records: number }) {
   const started = performance.now();
   const model = await loadSource(spec);
   printWarnings(model);
-  const mock = createMockServer({ model, seed: opts.seed, delay: opts.delay, log: (line) => console.log(styleText('dim', line)) });
+  const mock = createMockServer({ model, seed: opts.seed, delay: opts.delay, records: opts.records, log: (line) => console.log(styleText('dim', line)) });
   const url = await mock.listen(opts.port, opts.host);
 
   console.log(`\n${styleText('bold', model.title)} ${styleText('dim', model.version)}`);
@@ -119,12 +122,13 @@ function watchSources(model: MockModel, reload: () => Promise<MockModel | undefi
   watch(model.sources);
 }
 
-async function generateCmd(spec: string, route: string, seed: number) {
+async function generateCmd(spec: string, route: string, seed: number, records: number) {
   const model = await loadSource(spec);
   if (route) {
     const [method = 'GET', p = '/'] = route.includes(' ') ? route.split(/\s+/) : ['GET', route];
-    const result = respond(model, { method: method.toUpperCase(), path: p, seed });
-    if (result.status >= 400 && !model.routes.some((r) => r.pattern.test(p))) fail((result.body as any).message);
+    const [pathname = '/', query] = p.split('?');
+    const result = respond(model, { method: method.toUpperCase(), path: pathname, query, seed, records });
+    if (result.status >= 400 && !model.routes.some((r) => r.pattern.test(pathname))) fail((result.body as any).message);
     return console.log(JSON.stringify(result.body, null, 2));
   }
   const out: Record<string, unknown> = {};
