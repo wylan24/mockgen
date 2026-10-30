@@ -88,7 +88,7 @@ function genObject(schema: Schema, ctx: Ctx): Record<string, unknown> {
   if (ctx.depth >= ctx.maxDepth) return out;
 
   const props: Record<string, Schema> = schema.properties ?? {};
-  const record: RecordContext = { siblings: new Set(Object.keys(props).map((k) => k.toLowerCase())) };
+  const record: RecordContext = { siblings: new Set(Object.keys(props).map((k) => k.toLowerCase())), owner: ctx.name };
   for (const [name, propSchema] of Object.entries(props)) {
     if (propSchema.writeOnly) continue;
     out[name] = gen(propSchema, { ...ctx, depth: ctx.depth + 1, name, record });

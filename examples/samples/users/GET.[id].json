@@ -1,0 +1,1 @@
+{ "id": 1, "name": "Ada Lovelace", "email": "ada@example.com", "role": "admin", "avatarUrl": "https://i.pravatar.cc/150?u=1", "createdAt": "2025-01-14T09:30:00Z", "bio": "Analyst.", "lastLoginAt": "2026-10-30T22:14:03Z", "stats": { "posts": 42, "followers": 1200, "rating": 4.8 } }

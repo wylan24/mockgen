@@ -108,3 +108,17 @@ describe('example spec', () => {
     expect(checked).toBeGreaterThan(100);
   });
 });
+
+describe('name heuristics', () => {
+  const nameIn = (owner: string) => {
+    const schema = { type: 'object', properties: { [owner]: { type: 'object', properties: { id: { type: 'integer' }, name: { type: 'string' } } } } };
+    return (generate(schema, { seed: 4 }) as any)[owner].name as string;
+  };
+
+  it('names a record by what it is', () => {
+    const person = (generate({ type: 'object', properties: { name: { type: 'string' }, email: { type: 'string' } } }, { seed: 4 }) as any).name;
+    expect(person).toMatch(/^\S+ \S+/);
+    expect(nameIn('company')).not.toBe(nameIn('author'));
+    expect(nameIn('project')).toMatch(/^[a-z]+(-[a-z]+)+$/);
+  });
+});

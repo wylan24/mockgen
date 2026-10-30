@@ -1,0 +1,8 @@
+[
+  { "id": 1, "name": "Ada Lovelace", "email": "ada@example.com", "role": "admin", "avatarUrl": "https://i.pravatar.cc/150?u=1", "createdAt": "2025-01-14T09:30:00Z", "bio": "Analyst.", "team": { "id": "7b1e4c2a-1f0e-4f6a-9d3b-2c8e5a7f9b10", "name": "Engines" } },
+  { "id": 2, "name": "Grace Hopper", "email": "grace@example.com", "role": "member", "avatarUrl": "https://i.pravatar.cc/150?u=2", "createdAt": "2025-02-03T15:00:00Z", "bio": null, "team": { "id": "3c9d2e1f-6a7b-4c8d-9e0f-1a2b3c4d5e6f", "name": "Compilers" } },
+  { "id": 3, "name": "Alan Turing", "email": "alan@example.com", "role": "member", "avatarUrl": "https://i.pravatar.cc/150?u=3", "createdAt": "2025-03-21T11:45:10Z", "bio": "Thinks about machines.", "team": { "id": "3c9d2e1f-6a7b-4c8d-9e0f-1a2b3c4d5e6f", "name": "Compilers" } },
+  { "id": 4, "name": "Katherine Johnson", "email": "katherine@example.com", "role": "viewer", "avatarUrl": "https://i.pravatar.cc/150?u=4", "createdAt": "2025-04-02T08:05:00Z", "team": null },
+  { "id": 5, "name": "Edsger Dijkstra", "email": "edsger@example.com", "role": "member", "avatarUrl": "https://i.pravatar.cc/150?u=5", "createdAt": "2025-05-30T17:20:00Z", "bio": "Goto considered harmful.", "team": { "id": "7b1e4c2a-1f0e-4f6a-9d3b-2c8e5a7f9b10", "name": "Engines" } },
+  { "id": 6, "name": "Barbara Liskov", "email": "barbara@example.com", "role": "admin", "avatarUrl": "https://i.pravatar.cc/150?u=6", "createdAt": "2025-06-11T12:00:00Z", "bio": "Substitutes.", "team": { "id": "7b1e4c2a-1f0e-4f6a-9d3b-2c8e5a7f9b10", "name": "Engines" } }
+]

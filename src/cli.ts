@@ -4,21 +4,27 @@ import path from 'node:path';
 import { parseArgs, styleText } from 'node:util';
 import { generate } from './generate.js';
 import type { MockModel } from './model.js';
-import { loadOpenApi } from './openapi.js';
+import { loadSource } from './load.js';
+import { formatOpenApi, loadSamples } from './samples.js';
 import { createMockServer, respond } from './server.js';
 
-const HELP = `mockgen — turn an OpenAPI spec into a running mock server
+const HELP = `mockgen — turn an OpenAPI spec or a folder of sample responses into a running mock server
 
 Usage
-  mockgen serve <spec>                 Start a mock server (hot-reloads on change)
-  mockgen generate <spec> [route]      Print generated responses, e.g. "GET /users/1"
-  mockgen validate <spec>              Load the spec and generate every response
+  mockgen serve <spec|dir>             Start a mock server (hot-reloads on change)
+  mockgen generate <spec|dir> [route]  Print generated responses, e.g. "GET /users/1"
+  mockgen validate <spec|dir>          Load the input and generate every response
+  mockgen infer <dir> [-o file]        Write the schema inferred from samples as OpenAPI 3.1
+
+Sample folders: name files after the route, e.g. GET.users.json, users/GET.[id].json,
+GET.users.[id].404.json. Folders become path segments; [id] or {id} is a path param.
 
 Options
   -p, --port <n>      Port to listen on (default 4010)
   -H, --host <host>   Host to bind (default 127.0.0.1)
   -s, --seed <n>      Seed for generated data (default 1)
   -d, --delay <ms>    Delay every response, e.g. 300 or 300ms
+  -o, --out <file>    infer: write here instead of stdout (.yaml or .json)
       --no-watch      Disable hot reload
   -h, --help          Show this help
   -v, --version       Show the version
@@ -38,6 +44,7 @@ async function main(argv: string[]) {
       host: { type: 'string', short: 'H', default: '127.0.0.1' },
       seed: { type: 'string', short: 's', default: '1' },
       delay: { type: 'string', short: 'd', default: '0' },
+      out: { type: 'string', short: 'o' },
       watch: { type: 'boolean', default: true },
       help: { type: 'boolean', short: 'h' },
       version: { type: 'boolean', short: 'v' },
@@ -57,6 +64,8 @@ async function main(argv: string[]) {
       return generateCmd(spec, rest.join(' '), seed);
     case 'validate':
       return validate(spec, seed);
+    case 'infer':
+      return infer(spec, values.out);
     default:
       fail(`Unknown command "${command}". Run mockgen --help.`);
   }
@@ -64,7 +73,7 @@ async function main(argv: string[]) {
 
 async function serve(spec: string, opts: { port: number; host: string; seed: number; delay: number; watch: boolean }) {
   const started = performance.now();
-  const model = await loadOpenApi(spec);
+  const model = await loadSource(spec);
   printWarnings(model);
   const mock = createMockServer({ model, seed: opts.seed, delay: opts.delay, log: (line) => console.log(styleText('dim', line)) });
   const url = await mock.listen(opts.port, opts.host);
@@ -75,7 +84,7 @@ async function serve(spec: string, opts: { port: number; host: string; seed: num
 
   if (opts.watch) watchSources(model, async () => {
     try {
-      const next = await loadOpenApi(spec);
+      const next = await loadSource(spec);
       mock.setModel(next);
       printWarnings(next);
       console.log(`${styleText('green', '↻')} Reloaded ${next.routes.length} routes`);
@@ -98,7 +107,7 @@ function watchSources(model: MockModel, reload: () => Promise<MockModel | undefi
   const watch = (files: string[]) => {
     watchers.forEach((w) => w.close());
     watchers = files.map((file) =>
-      fs.watch(file, () => {
+      fs.watch(file, { recursive: fs.statSync(file).isDirectory() }, () => {
         clearTimeout(timer);
         timer = setTimeout(async () => {
           const next = await reload();
@@ -111,7 +120,7 @@ function watchSources(model: MockModel, reload: () => Promise<MockModel | undefi
 }
 
 async function generateCmd(spec: string, route: string, seed: number) {
-  const model = await loadOpenApi(spec);
+  const model = await loadSource(spec);
   if (route) {
     const [method = 'GET', p = '/'] = route.includes(' ') ? route.split(/\s+/) : ['GET', route];
     const result = respond(model, { method: method.toUpperCase(), path: p, seed });
@@ -126,8 +135,18 @@ async function generateCmd(spec: string, route: string, seed: number) {
   console.log(JSON.stringify(out, null, 2));
 }
 
+async function infer(dir: string, out: string | undefined) {
+  if (!(await fs.promises.stat(dir).catch(() => undefined))?.isDirectory()) fail(`infer expects a folder of sample responses, got "${dir}"`);
+  const model = await loadSamples(dir);
+  printWarnings(model);
+  const text = formatOpenApi(model, out);
+  if (!out) return process.stdout.write(text);
+  await fs.promises.writeFile(out, text);
+  console.error(`${styleText('green', '✔')} Wrote ${model.routes.length} routes to ${out}`);
+}
+
 async function validate(spec: string, seed: number) {
-  const model = await loadOpenApi(spec);
+  const model = await loadSource(spec);
   printWarnings(model);
   let responses = 0;
   for (const r of model.routes) {

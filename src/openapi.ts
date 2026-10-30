@@ -2,7 +2,7 @@ import path from 'node:path';
 import $RefParser from '@apidevtools/json-schema-ref-parser';
 import type { MockModel, MockResponse, MockRoute, Schema } from './model.js';
 
-const METHODS = ['get', 'put', 'post', 'delete', 'patch', 'options', 'head', 'trace'] as const;
+export const METHODS = ['get', 'put', 'post', 'delete', 'patch', 'options', 'head', 'trace'] as const;
 
 export class SpecLoadError extends Error {
   constructor(
@@ -55,8 +55,7 @@ export async function loadOpenApi(file: string): Promise<MockModel> {
     }
   }
 
-  // Literal segments win over params: `/users/me` must match before `/users/{id}`.
-  routes.sort((a, b) => a.paramNames.length - b.paramNames.length);
+  sortRoutes(routes);
 
   return {
     title: doc.info?.title ?? path.basename(abs),
@@ -115,6 +114,11 @@ function firstExample(media: any): { value: unknown } | undefined {
   const first = media.examples && Object.values<any>(media.examples)[0];
   if (first && 'value' in first) return { value: first.value };
   return undefined;
+}
+
+/** Literal segments win over params: `/users/me` must match before `/users/{id}`. */
+export function sortRoutes(routes: MockRoute[]): MockRoute[] {
+  return routes.sort((a, b) => a.paramNames.length - b.paramNames.length);
 }
 
 export function compilePath(template: string): { pattern: RegExp; paramNames: string[] } {

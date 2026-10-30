@@ -47,7 +47,8 @@
   "dependencies": {
     "@apidevtools/json-schema-ref-parser": "^16.0.5",
     "@faker-js/faker": "^10.6.0",
-    "randexp": "^0.5.3"
+    "randexp": "^0.5.3",
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

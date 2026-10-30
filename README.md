@@ -1,9 +1,10 @@
 # mockgen
 
-Turn an OpenAPI spec into a running mock server with realistic, stable fake data — one command.
+Turn an OpenAPI spec — or just a folder of sample JSON responses — into a running mock server with realistic, stable fake data. One command.
 
 ```bash
 npx @wylan24/mockgen serve ./openapi.yaml
+npx @wylan24/mockgen serve ./samples/
 ```
 
 You get a server on `localhost:4010` that returns schema-valid, human-looking data, returns the same data across restarts, and can be tweaked without writing code.
@@ -20,9 +21,10 @@ You get a server on `localhost:4010` that returns schema-valid, human-looking da
 ## Usage
 
 ```bash
-mockgen serve <spec>                 # Start a mock server (hot-reloads on change)
-mockgen generate <spec> [route]      # Print generated responses, e.g. "GET /users/1"
-mockgen validate <spec>              # Load the spec and generate every response
+mockgen serve <spec|dir>             # Start a mock server (hot-reloads on change)
+mockgen generate <spec|dir> [route]  # Print generated responses, e.g. "GET /users/1"
+mockgen validate <spec|dir>          # Load the input and generate every response
+mockgen infer <dir> [-o openapi.yaml]  # Write the schema inferred from samples as OpenAPI 3.1
 ```
 
 | Option | Default | |
@@ -32,6 +34,7 @@ mockgen validate <spec>              # Load the spec and generate every response
 | `-s, --seed` | `1` | Seed for generated data |
 | `-d, --delay` | `0` | Delay every response, e.g. `300ms` |
 | `--no-watch` | | Disable hot reload |
+| `-o, --out` | stdout | `infer` output file (`.yaml` or `.json`) |
 
 ### Simulating errors and latency
 
@@ -56,15 +59,34 @@ await mock.close();
 
 ## Supported input
 
+### OpenAPI specs
+
 - OpenAPI 3.0 and 3.1, YAML or JSON, with local and multi-file `$ref`s (circular refs are fine).
 - Swagger 2.0 is not supported; convert it with [swagger2openapi](https://github.com/Mermade/oas-kit) first.
+
+### A folder of sample responses
+
+No spec yet? Drop real responses into a folder, named after their route. mockgen infers a schema from them and generates fresh data in the same shape.
+
+| File | Route |
+| --- | --- |
+| `GET.users.json` | `GET /users` → 200 |
+| `GET.users.[id].json` or `users/GET.[id].json` | `GET /users/{id}` (folders are path segments; `{id}` works too) |
+| `GET.users.[id].404.json` | the 404 response, served with `X-Mock-Status: 404` |
+| `GET.users.[id]~alice.json` | another sample for the same response |
+| `POST.users.json` | `POST /users` → 201 |
+| `DELETE.users.[id].json` (empty file) | `DELETE /users/{id}` → 204, no body |
+
+Every sample for a route is merged: keys missing from some samples become optional, `null` values make a field nullable, ISO dates, emails, URLs and UUIDs are detected, and a few short values repeated often (`role: admin | member | viewer`) become an enum. See [examples/samples](examples/samples).
+
+When you're ready for a real spec, `mockgen infer ./samples -o openapi.yaml` writes the inferred schema out so you can edit it.
 
 ## Roadmap to 1.0
 
 - [x] OpenAPI 3.0/3.1 loader with multi-file `$ref`s
 - [x] Deterministic, field-name-aware data generation honoring schema constraints
 - [x] Mock server: CORS, request log, status/latency simulation, hot reload
-- [ ] Sample-response input (folder of JSON files → inferred schema) and `mockgen infer`
+- [x] Sample-response input (folder of JSON files → inferred schema) and `mockgen infer`
 - [ ] List/detail consistency (`/users/{id}` returns the user from `/users`) and pagination
 - [ ] Spec corpus of 50+ real-world APIs in CI
 - [ ] Stateful CRUD, `mock.config.ts` overrides, Docker image

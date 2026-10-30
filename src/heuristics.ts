@@ -5,6 +5,8 @@ import type { Schema } from './model.js';
 export interface RecordContext {
   /** Property names of the object being generated. */
   siblings: Set<string>;
+  /** Name of the property holding this object, e.g. `team` for `team.name`. */
+  owner?: string;
   person?: { first: string; last: string };
 }
 
@@ -29,7 +31,12 @@ const STRING_RULES: StringRule[] = [
   [
     /^name$/,
     (f, r) => {
-      if (has(r, 'price', 'sku', 'cost', 'stock', 'inventory')) return f.commerce.productName();
+      const owner = normalizeName(r.owner ?? '');
+      if (/(product|item|sku)$/.test(owner) || has(r, 'price', 'sku', 'cost', 'stock', 'inventory')) return f.commerce.productName();
+      if (/(team|group|department|squad|unit)$/.test(owner)) return `${f.word.adjective()} ${f.word.noun()}`.replace(/^\w/, (c) => c.toUpperCase());
+      if (/(org|organization|organisation|company|employer|account|workspace|tenant|vendor|brand)$/.test(owner)) return f.company.name();
+      if (/(project|repo|repository|app|application|service)$/.test(owner)) return f.lorem.slug(2);
+      if (/(category|tag|label|genre|topic)$/.test(owner)) return f.commerce.department();
       if (has(r, 'domain', 'industry', 'employees', 'website')) return f.company.name();
       return fullName(f, r);
     },
