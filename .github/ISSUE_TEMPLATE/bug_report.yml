@@ -1,0 +1,34 @@
+name: Bug report
+description: mockgen crashed, rejected a valid spec, or served something wrong
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you ran, what you expected, and what you got instead. Paste error output as text.
+      placeholder: |
+        Ran `npx @wylan24/mockgen serve ./openapi.yaml`, then `curl localhost:4010/users`.
+        Expected a list of users, got a 500 with ...
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Spec or samples that reproduce it
+      description: The smallest spec, sample folder, or a link to a public spec. Trim anything private.
+      render: yaml
+  - type: input
+    id: version
+    attributes:
+      label: mockgen version
+      description: Output of `npx @wylan24/mockgen --version`
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Node version and OS
+      placeholder: Node 22.19, macOS 15
+    validations:
+      required: true
