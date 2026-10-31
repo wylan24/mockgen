@@ -106,23 +106,40 @@ async function serve(spec: string, opts: { port: number; host: string; seed: num
   process.once('SIGTERM', shutdown);
 }
 
-/** Watch every local file of the spec and reload on change, debounced. */
+/**
+ * Watch every local file of the spec and reload on change, debounced.
+ *
+ * Watchers are re-created after every reload, failed ones included: on Linux and macOS
+ * a watcher follows the file, not its name, so an editor's save (write a temp file,
+ * rename it over the original) leaves the old watcher on a file that no longer exists.
+ */
 function watchSources(model: MockModel, reload: () => Promise<MockModel | undefined>) {
   let watchers: fs.FSWatcher[] = [];
+  let files = model.sources;
   let timer: NodeJS.Timeout | undefined;
-  const watch = (files: string[]) => {
-    watchers.forEach((w) => w.close());
-    watchers = files.map((file) =>
-      fs.watch(file, { recursive: fs.statSync(file).isDirectory() }, () => {
-        clearTimeout(timer);
-        timer = setTimeout(async () => {
-          const next = await reload();
-          if (next) watch(next.sources);
-        }, 100);
-      }),
-    );
+  let retry: NodeJS.Timeout | undefined;
+  const onChange = () => {
+    clearTimeout(timer);
+    timer = setTimeout(async () => {
+      files = (await reload())?.sources ?? files;
+      watch();
+    }, 100);
   };
-  watch(model.sources);
+  const watch = () => {
+    watchers.forEach((w) => w.close());
+    watchers = [];
+    clearTimeout(retry);
+    let missing = false;
+    for (const file of files) {
+      try {
+        watchers.push(fs.watch(file, { recursive: fs.statSync(file).isDirectory() }, onChange));
+      } catch {
+        missing = true; // e.g. mid-save, between delete and rename
+      }
+    }
+    if (missing) retry = setTimeout(watch, 200);
+  };
+  watch();
 }
 
 async function generateCmd(spec: string, route: string, seed: number, records: number) {
