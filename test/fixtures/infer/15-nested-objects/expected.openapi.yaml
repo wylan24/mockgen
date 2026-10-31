@@ -1,0 +1,71 @@
+openapi: 3.1.0
+info:
+  title: samples
+  version: 0.0.0
+paths:
+  /users/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        "200":
+          description: Inferred from samples
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    minimum: 0
+                  name:
+                    type: string
+                  address:
+                    type: object
+                    properties:
+                      street:
+                        type: string
+                      city:
+                        type: string
+                      geo:
+                        type: object
+                        properties:
+                          lat:
+                            type: number
+                            minimum: 0
+                          lng:
+                            type: number
+                        required:
+                          - lat
+                          - lng
+                    required:
+                      - street
+                      - city
+                      - geo
+                  settings:
+                    type: object
+                    properties:
+                      theme:
+                        type: string
+                      notifications:
+                        type: object
+                        properties:
+                          email:
+                            type: boolean
+                          sms:
+                            type: boolean
+                        required:
+                          - email
+                          - sms
+                    required:
+                      - theme
+                      - notifications
+                required:
+                  - id
+                  - name
+                  - address
+                  - settings

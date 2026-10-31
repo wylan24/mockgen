@@ -1,0 +1,7 @@
+{
+  "id": 2,
+  "role": "member",
+  "permissions": [
+    "read"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "id": 1,
+  "name": "Grace Hopper",
+  "address": {
+    "street": "1 Navy Way",
+    "city": "Arlington",
+    "geo": {
+      "lat": 38.87,
+      "lng": -77.05
+    }
+  },
+  "settings": {
+    "theme": "dark",
+    "notifications": {
+      "email": true,
+      "sms": false
+    }
+  }
+}

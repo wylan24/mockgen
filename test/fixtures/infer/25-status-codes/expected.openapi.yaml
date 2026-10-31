@@ -1,0 +1,93 @@
+openapi: 3.1.0
+info:
+  title: samples
+  version: 0.0.0
+paths:
+  /items:
+    get:
+      responses:
+        "500":
+          description: Inferred from samples
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                  - error
+    post:
+      responses:
+        "201":
+          description: Inferred from samples
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    minimum: 0
+                  name:
+                    type: string
+                required:
+                  - id
+                  - name
+        "422":
+          description: Inferred from samples
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  fields:
+                    type: object
+                    properties:
+                      price:
+                        type: string
+                      name:
+                        type: string
+                required:
+                  - error
+                  - fields
+  /items/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        "200":
+          description: Inferred from samples
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    minimum: 0
+                  name:
+                    type: string
+                required:
+                  - id
+                  - name
+        "404":
+          description: Inferred from samples
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                required:
+                  - error
+                  - message

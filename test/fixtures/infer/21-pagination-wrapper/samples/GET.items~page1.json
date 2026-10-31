@@ -1,0 +1,22 @@
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "First"
+    },
+    {
+      "id": 2,
+      "name": "Second"
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "perPage": 2,
+    "total": 5,
+    "hasMore": true
+  },
+  "links": {
+    "next": "https://api.example.com/items?page=2",
+    "prev": null
+  }
+}

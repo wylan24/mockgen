@@ -1,0 +1,12 @@
+[
+  {
+    "item": "tea",
+    "price": 3,
+    "quantity": 2
+  },
+  {
+    "item": "cake",
+    "price": 4.5,
+    "quantity": 1
+  }
+]

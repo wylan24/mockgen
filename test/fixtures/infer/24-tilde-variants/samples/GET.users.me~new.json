@@ -1,0 +1,8 @@
+{
+  "id": 3,
+  "role": "member",
+  "permissions": [],
+  "onboarding": {
+    "step": 2
+  }
+}

@@ -1,0 +1,33 @@
+openapi: 3.1.0
+info:
+  title: samples
+  version: 0.0.0
+paths:
+  /orders:
+    get:
+      responses:
+        "200":
+          description: Inferred from samples
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      minimum: 0
+                    status:
+                      type: string
+                      enum:
+                        - paid
+                        - pending
+                        - refunded
+                    total:
+                      type: integer
+                      minimum: 0
+                  required:
+                    - id
+                    - status
+                    - total

@@ -1,0 +1,143 @@
+openapi: 3.1.0
+info:
+  title: samples
+  version: 0.0.0
+paths:
+  /repos/{owner}/{repo}/issues/{number}:
+    parameters:
+      - name: owner
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: repo
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: number
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        "200":
+          description: Inferred from samples
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    minimum: 0
+                  number:
+                    type: integer
+                    minimum: 0
+                  state:
+                    type: string
+                  title:
+                    type: string
+                  body:
+                    type:
+                      - string
+                      - "null"
+                  user:
+                    type: object
+                    properties:
+                      login:
+                        type: string
+                      id:
+                        type: integer
+                        minimum: 0
+                      avatar_url:
+                        type: string
+                        format: uri
+                      site_admin:
+                        type: boolean
+                    required:
+                      - login
+                      - id
+                      - avatar_url
+                      - site_admin
+                  labels:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          minimum: 0
+                        name:
+                          type: string
+                        color:
+                          type: string
+                        default:
+                          type: boolean
+                      required:
+                        - id
+                        - name
+                        - color
+                        - default
+                  assignee:
+                    type:
+                      - object
+                      - "null"
+                    properties:
+                      login:
+                        type: string
+                      id:
+                        type: integer
+                        minimum: 0
+                      avatar_url:
+                        type: string
+                        format: uri
+                      site_admin:
+                        type: boolean
+                    required:
+                      - login
+                      - id
+                      - avatar_url
+                      - site_admin
+                  milestone:
+                    type:
+                      - object
+                      - "null"
+                    properties:
+                      id:
+                        type: integer
+                        minimum: 0
+                      title:
+                        type: string
+                      due_on:
+                        type: string
+                        format: date-time
+                    required:
+                      - id
+                      - title
+                      - due_on
+                  comments:
+                    type: integer
+                    minimum: 0
+                  created_at:
+                    type: string
+                    format: date-time
+                  closed_at:
+                    type:
+                      - string
+                      - "null"
+                    format: date-time
+                required:
+                  - id
+                  - number
+                  - state
+                  - title
+                  - body
+                  - user
+                  - labels
+                  - assignee
+                  - milestone
+                  - comments
+                  - created_at
+                  - closed_at

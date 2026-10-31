@@ -1,0 +1,6 @@
+{
+  "error": "invalid",
+  "fields": {
+    "price": "must be positive"
+  }
+}

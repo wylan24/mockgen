@@ -1,0 +1,70 @@
+openapi: 3.1.0
+info:
+  title: samples
+  version: 0.0.0
+paths:
+  /v1/charges:
+    get:
+      responses:
+        "200":
+          description: Inferred from samples
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  object:
+                    type: string
+                  url:
+                    type: string
+                  has_more:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        object:
+                          type: string
+                          enum:
+                            - charge
+                        amount:
+                          type: integer
+                          minimum: 0
+                        currency:
+                          type: string
+                          enum:
+                            - usd
+                        paid:
+                          type: boolean
+                        status:
+                          type: string
+                        customer:
+                          type:
+                            - string
+                            - "null"
+                        metadata:
+                          type: object
+                          properties:
+                            order_id:
+                              type: string
+                        created:
+                          type: integer
+                          minimum: 0
+                      required:
+                        - id
+                        - object
+                        - amount
+                        - currency
+                        - paid
+                        - status
+                        - customer
+                        - metadata
+                        - created
+                required:
+                  - object
+                  - url
+                  - has_more
+                  - data

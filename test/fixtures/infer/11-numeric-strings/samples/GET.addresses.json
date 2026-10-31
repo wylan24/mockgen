@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "zip": "10001",
+    "countryCode": "US"
+  },
+  {
+    "id": 2,
+    "zip": "94103",
+    "countryCode": "US"
+  },
+  {
+    "id": 3,
+    "zip": "10001",
+    "countryCode": "CA"
+  },
+  {
+    "id": 4,
+    "zip": "94103",
+    "countryCode": "US"
+  },
+  {
+    "id": 5,
+    "zip": "10001",
+    "countryCode": "US"
+  },
+  {
+    "id": 6,
+    "zip": "94103",
+    "countryCode": "CA"
+  }
+]

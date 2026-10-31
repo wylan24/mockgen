@@ -1,0 +1,9 @@
+{
+  "id": 1,
+  "role": "admin",
+  "permissions": [
+    "read",
+    "write",
+    "delete"
+  ]
+}
