@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.1.0-alpha.2] - 2026-10-31
+
+### Added
+
+- `--locale` (and a `locale` option) for names, addresses and phone numbers in any of Faker's 76 locales.
+
+### Fixed
+
+- Hot reload watches the spec's folders instead of its files, so changes are no longer missed on macOS after a broken spec is saved by replacing the file. A watcher error no longer crashes the server.
+
 ## [0.1.0-alpha.1] - 2026-10-31
 
 First public alpha.
@@ -17,7 +27,6 @@ First public alpha.
 - Deterministic output: the same seed gives byte-identical responses on every OS and Node version.
 - Stable 50-record collections behind list endpoints, with page/limit, offset and cursor paging, `X-Total-Count` and `Link` headers. List items match their detail routes.
 - CORS by default, a request log, `X-Mock-Status` and `X-Mock-Delay` for errors and latency, and hot reload that keeps serving the last good version when the spec breaks.
-- `--locale` (and a `locale` option) for names, addresses and phone numbers in any of Faker's 76 locales.
 
 ### Fixed
 
@@ -27,5 +36,6 @@ First public alpha.
 - Load errors show paths relative to the working directory, and a busy port gets a clear message.
 - Lower memory use: only Faker's English locale is loaded.
 
-[Unreleased]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.1...HEAD
+[Unreleased]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.2...HEAD
+[0.1.0-alpha.2]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.1...v0.1.0-alpha.2
 [0.1.0-alpha.1]: https://github.com/wylan24/mockgen/releases/tag/v0.1.0-alpha.1
