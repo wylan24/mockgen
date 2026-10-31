@@ -1,0 +1,18 @@
+{
+  "data": [
+    {
+      "id": 5,
+      "name": "Fifth"
+    }
+  ],
+  "meta": {
+    "page": 3,
+    "perPage": 2,
+    "total": 5,
+    "hasMore": false
+  },
+  "links": {
+    "next": null,
+    "prev": "https://api.example.com/items?page=2"
+  }
+}

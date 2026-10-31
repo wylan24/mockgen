@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "status": "paid",
+    "total": 1000
+  },
+  {
+    "id": 2,
+    "status": "pending",
+    "total": 1250
+  },
+  {
+    "id": 3,
+    "status": "refunded",
+    "total": 1500
+  },
+  {
+    "id": 4,
+    "status": "paid",
+    "total": 1750
+  },
+  {
+    "id": 5,
+    "status": "pending",
+    "total": 2000
+  },
+  {
+    "id": 6,
+    "status": "refunded",
+    "total": 2250
+  }
+]

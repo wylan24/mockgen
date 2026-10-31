@@ -1,0 +1,4 @@
+[
+  "GET.broken.json: invalid JSON, skipped (…)",
+  "notes.json: ignored; name it like GET.users.json or users/GET.[id].json"
+]

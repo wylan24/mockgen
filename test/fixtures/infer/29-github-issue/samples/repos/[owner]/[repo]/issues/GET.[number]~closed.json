@@ -1,0 +1,28 @@
+{
+  "id": 1296270,
+  "number": 1348,
+  "state": "closed",
+  "title": "Docs typo",
+  "body": null,
+  "user": {
+    "login": "hubot",
+    "id": 2,
+    "avatar_url": "https://github.com/images/hubot.png",
+    "site_admin": true
+  },
+  "labels": [],
+  "assignee": {
+    "login": "octocat",
+    "id": 1,
+    "avatar_url": "https://github.com/images/error/octocat_happy.gif",
+    "site_admin": false
+  },
+  "milestone": {
+    "id": 1002604,
+    "title": "v1.0",
+    "due_on": "2012-10-09T23:39:01Z"
+  },
+  "comments": 3,
+  "created_at": "2011-04-23T09:01:02Z",
+  "closed_at": "2011-04-24T10:00:00Z"
+}

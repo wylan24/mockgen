@@ -1,0 +1,59 @@
+openapi: 3.1.0
+info:
+  title: samples
+  version: 0.0.0
+paths:
+  /orgs/{org}/members:
+    parameters:
+      - name: org
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        "200":
+          description: Inferred from samples
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    login:
+                      type: string
+                  required:
+                    - login
+  /orgs/{org}/repos/{repo}:
+    parameters:
+      - name: org
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: repo
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        "200":
+          description: Inferred from samples
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    minimum: 0
+                  fullName:
+                    type: string
+                  private:
+                    type: boolean
+                required:
+                  - id
+                  - fullName
+                  - private

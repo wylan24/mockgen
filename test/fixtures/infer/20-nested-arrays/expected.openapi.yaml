@@ -1,0 +1,51 @@
+openapi: 3.1.0
+info:
+  title: samples
+  version: 0.0.0
+paths:
+  /grids/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        "200":
+          description: Inferred from samples
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    minimum: 0
+                  matrix:
+                    type: array
+                    items:
+                      type: array
+                      items:
+                        type: integer
+                        minimum: 0
+                  path:
+                    type: array
+                    items:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          x:
+                            type: integer
+                            minimum: 0
+                          y:
+                            type: integer
+                            minimum: 0
+                        required:
+                          - x
+                          - y
+                required:
+                  - id
+                  - matrix
+                  - path

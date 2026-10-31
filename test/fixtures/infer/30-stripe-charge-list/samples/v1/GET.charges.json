@@ -1,0 +1,53 @@
+{
+  "object": "list",
+  "url": "/v1/charges",
+  "has_more": false,
+  "data": [
+    {
+      "id": "ch_3MmlLrLkdIwHu7ix0snN0B10",
+      "object": "charge",
+      "amount": 1099,
+      "currency": "usd",
+      "paid": true,
+      "status": "succeeded",
+      "customer": "cus_NffrFeUfNV2Hi0",
+      "metadata": {
+        "order_id": "6735"
+      },
+      "created": 1679090539
+    },
+    {
+      "id": "ch_3MmlLrLkdIwHu7ix0snN0B11",
+      "object": "charge",
+      "amount": 2000,
+      "currency": "usd",
+      "paid": true,
+      "status": "succeeded",
+      "customer": "cus_NffrFeUfNV2Hi1",
+      "metadata": {},
+      "created": 1679094139
+    },
+    {
+      "id": "ch_3MmlLrLkdIwHu7ix0snN0B12",
+      "object": "charge",
+      "amount": 500,
+      "currency": "usd",
+      "paid": true,
+      "status": "failed",
+      "customer": null,
+      "metadata": {},
+      "created": 1679097739
+    },
+    {
+      "id": "ch_3MmlLrLkdIwHu7ix0snN0B13",
+      "object": "charge",
+      "amount": 12500,
+      "currency": "usd",
+      "paid": true,
+      "status": "pending",
+      "customer": "cus_NffrFeUfNV2Hi3",
+      "metadata": {},
+      "created": 1679101339
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+openapi: 3.1.0
+info:
+  title: samples
+  version: 0.0.0
+paths:
+  /events/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        "200":
+          description: Inferred from samples
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  startsAt:
+                    type: string
+                    format: date-time
+                  day:
+                    type: string
+                    format: date
+                  organizerEmail:
+                    type: string
+                    format: email
+                  url:
+                    type: string
+                    format: uri
+                required:
+                  - id
+                  - startsAt
+                  - day
+                  - organizerEmail
+                  - url

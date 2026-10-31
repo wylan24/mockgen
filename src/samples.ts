@@ -99,7 +99,9 @@ async function listJsonFiles(dir: string): Promise<string[]> {
   return entries
     .filter((e) => e.isFile() && e.name.toLowerCase().endsWith('.json'))
     .map((e) => path.join(e.parentPath, e.name))
-    .filter((f) => !f.split(path.sep).some((seg) => seg === 'node_modules' || seg.startsWith('.')))
+    // Skip dot-folders and node_modules inside the sample folder, not above it:
+    // `.mocks/` is a common place to keep samples.
+    .filter((f) => !path.relative(dir, f).split(path.sep).some((seg) => seg === 'node_modules' || seg.startsWith('.')))
     .sort();
 }
 

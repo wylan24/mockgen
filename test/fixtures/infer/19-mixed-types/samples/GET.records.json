@@ -1,0 +1,14 @@
+[
+  {
+    "id": "abc-1",
+    "value": "text"
+  },
+  {
+    "id": 42,
+    "value": 7
+  },
+  {
+    "id": 43,
+    "value": null
+  }
+]

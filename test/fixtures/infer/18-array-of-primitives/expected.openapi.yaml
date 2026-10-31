@@ -1,0 +1,44 @@
+openapi: 3.1.0
+info:
+  title: samples
+  version: 0.0.0
+paths:
+  /stats:
+    get:
+      responses:
+        "200":
+          description: Inferred from samples
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scores:
+                    type: array
+                    items:
+                      type: number
+                      minimum: 0
+                  flags:
+                    type: array
+                    items:
+                      type: boolean
+                  ids:
+                    type: array
+                    items:
+                      type: integer
+                      minimum: 0
+                required:
+                  - scores
+                  - flags
+                  - ids
+  /tags:
+    get:
+      responses:
+        "200":
+          description: Inferred from samples
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string

@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "title": "Hello",
+    "category": "news"
+  },
+  {
+    "id": 2,
+    "title": "Release notes",
+    "category": "blog"
+  },
+  {
+    "id": 3,
+    "title": "Hello",
+    "category": "news"
+  },
+  {
+    "id": 4,
+    "title": "Release notes",
+    "category": "blog"
+  },
+  {
+    "id": 5,
+    "title": "Hello",
+    "category": "news"
+  },
+  {
+    "id": 6,
+    "title": "Release notes",
+    "category": "blog"
+  }
+]
