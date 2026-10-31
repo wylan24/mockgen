@@ -1,5 +1,9 @@
 # mockgen
 
+[![CI](https://github.com/wylan24/mockgen/actions/workflows/ci.yml/badge.svg)](https://github.com/wylan24/mockgen/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@wylan24/mockgen?include_prereleases)](https://www.npmjs.com/package/@wylan24/mockgen)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Turn an OpenAPI spec — or just a folder of sample JSON responses — into a running mock server with realistic, stable fake data. One command.
 
 ```bash
@@ -9,7 +13,22 @@ npx @wylan24/mockgen serve ./samples/
 
 You get a server on `localhost:4010` that returns schema-valid, human-looking data, returns the same data across restarts, and can be tweaked without writing code.
 
-> **Status:** early development (0.x). Not yet published to npm — run it from source for now (see [Development](#development)).
+> **Status:** alpha (0.x). It works and is tested against 57 real-world APIs, but options may still change before 1.0. [Feedback and bug reports](https://github.com/wylan24/mockgen/issues/new/choose) are very welcome.
+
+## Install
+
+Requires Node 22.19 or later. Run it without installing:
+
+```bash
+npx @wylan24/mockgen serve ./openapi.yaml
+```
+
+Or add it to a project, for scripts and tests:
+
+```bash
+npm install --save-dev @wylan24/mockgen
+npx mockgen serve ./openapi.yaml
+```
 
 ## Why
 
@@ -147,6 +166,12 @@ git tag v0.1.0-alpha.1 && git push origin v0.1.0-alpha.1
 ```
 
 The [release workflow](.github/workflows/release.yml) reruns the tests, smoke test and strict corpus gate, publishes to npm with provenance (pre-releases under the `next` dist-tag), and creates the GitHub release. It needs an `NPM_TOKEN` repository secret, or the workflow set up as a trusted publisher on npmjs.com.
+
+## Contributing
+
+Bug reports, specs that mockgen gets wrong, and pull requests are all welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) to get set up, and the [Code of Conduct](CODE_OF_CONDUCT.md). Ask questions in [Discussions](https://github.com/wylan24/mockgen/discussions). Report security problems privately, as described in [SECURITY.md](SECURITY.md).
+
+See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
 
 ## License
 
