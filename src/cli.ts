@@ -111,39 +111,78 @@ async function serve(spec: string, opts: { port: number; host: string; seed: num
 }
 
 /**
- * Watch every local file of the spec and reload on change, debounced.
+ * Watch the spec's files and reload on change, debounced.
  *
- * Watchers are re-created after every reload, failed ones included: on Linux and macOS
- * a watcher follows the file, not its name, so an editor's save (write a temp file,
- * rename it over the original) leaves the old watcher on a file that no longer exists.
+ * Each file is watched through its folder, filtered by name, rather than directly:
+ * on Linux and macOS a watcher on a file follows that file, so an editor's save
+ * (write a temp file, rename it over the original) would leave it watching a file
+ * that no longer exists. A folder watcher sees the rename and keeps working.
+ * Sample folders are watched recursively, and any change in them counts.
  */
 function watchSources(model: MockModel, reload: () => Promise<MockModel | undefined>) {
-  let watchers: fs.FSWatcher[] = [];
-  let files = model.sources;
+  // folder → names of the spec files in it, or 'all' for a sample folder
+  const watchers = new Map<string, { watcher: fs.FSWatcher; names: Set<string> | 'all' }>();
   let timer: NodeJS.Timeout | undefined;
   let retry: NodeJS.Timeout | undefined;
+
   const onChange = () => {
     clearTimeout(timer);
     timer = setTimeout(async () => {
-      files = (await reload())?.sources ?? files;
-      watch();
+      const next = await reload();
+      if (next) watch(next.sources);
     }, 100);
   };
-  const watch = () => {
-    watchers.forEach((w) => w.close());
-    watchers = [];
-    clearTimeout(retry);
-    let missing = false;
-    for (const file of files) {
-      try {
-        watchers.push(fs.watch(file, { recursive: fs.statSync(file).isDirectory() }, onChange));
-      } catch {
-        missing = true; // e.g. mid-save, between delete and rename
+
+  const watch = (sources: string[]) => {
+    const wanted = new Map<string, Set<string> | 'all'>();
+    for (const source of sources) {
+      const isDir = fs.statSync(source, { throwIfNoEntry: false })?.isDirectory();
+      if (isDir) {
+        wanted.set(path.resolve(source), 'all');
+      } else {
+        const dir = path.dirname(path.resolve(source));
+        const names = wanted.get(dir);
+        if (names !== 'all') wanted.set(dir, (names ?? new Set()).add(path.basename(source)));
       }
     }
-    if (missing) retry = setTimeout(watch, 200);
+    for (const [dir, entry] of watchers) {
+      if (!wanted.has(dir)) {
+        entry.watcher.close();
+        watchers.delete(dir);
+      }
+    }
+    let failed = false;
+    for (const [dir, names] of wanted) {
+      const existing = watchers.get(dir);
+      if (existing && (existing.names === 'all') === (names === 'all')) {
+        existing.names = names;
+        continue;
+      }
+      existing?.watcher.close();
+      try {
+        const watcher = fs.watch(dir, { recursive: names === 'all' }, (_event, filename) => {
+          const current = watchers.get(dir)?.names;
+          // Some platforms omit the file name; then any change in the folder counts.
+          if (current === 'all' || !filename || current?.has(path.basename(filename.toString()))) onChange();
+        });
+        // A watcher error (e.g. the folder was deleted) would otherwise crash the server.
+        watcher.on('error', () => {
+          watcher.close();
+          watchers.delete(dir);
+          clearTimeout(retry);
+          retry = setTimeout(() => watch(sources), 500);
+        });
+        watchers.set(dir, { watcher, names });
+      } catch {
+        failed = true; // e.g. the folder doesn't exist right now
+      }
+    }
+    if (failed) {
+      clearTimeout(retry);
+      retry = setTimeout(() => watch(sources), 500);
+    }
   };
-  watch();
+  watch(model.sources);
 }
 
 async function generateCmd(spec: string, route: string, seed: number, records: number) {
