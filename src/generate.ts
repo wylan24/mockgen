@@ -1,4 +1,5 @@
-import { Faker, base, en } from '@faker-js/faker';
+import type { Faker } from '@faker-js/faker';
+import { faker as enFaker } from '@faker-js/faker/locale/en';
 import RandExp from 'randexp';
 import type { Schema } from './model.js';
 import { countMatches, type Discriminator, discriminatorOf, fits, mergeAllOf, mergeBranch, typeOf } from './schema.js';
@@ -16,7 +17,10 @@ export interface GenerateOptions {
 // Faker's date helpers default to "now"; pin them so output never drifts.
 const REF_DATE = new Date('2026-01-01T00:00:00.000Z');
 
-const faker = new Faker({ locale: [en, base] });
+// The package root loads every locale (~23 MB of RSS); the `locale/en` entry only
+// exports a shared instance, so build a private one from its class and definitions.
+const FakerClass = enFaker.constructor as typeof Faker;
+const faker = new FakerClass({ locale: enFaker.rawDefinitions });
 faker.setDefaultRefDate(REF_DATE);
 
 // Filling every optional field of every nested object explodes on big specs (Stripe
