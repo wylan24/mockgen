@@ -73,6 +73,18 @@ describe('loadSamples', () => {
     expect(model.warnings.join('\n')).toMatch(/GET\.broken\.json.*invalid JSON/);
     await fs.rm(dir, { recursive: true });
   });
+
+  it('loads a sample folder that lives inside a dot-folder', async () => {
+    const parent = await fs.mkdtemp(path.join(os.tmpdir(), 'mockgen-'));
+    const dir = path.join(parent, '.mocks');
+    await fs.mkdir(path.join(dir, '.drafts'), { recursive: true });
+    await fs.writeFile(path.join(dir, 'GET.ok.json'), '{"a":1}');
+    await fs.writeFile(path.join(dir, '.drafts', 'GET.draft.json'), '{"a":1}');
+    const model = await loadSamples(dir);
+    // Dot-folders *inside* the sample folder are still skipped.
+    expect(model.routes.map((r) => r.path)).toEqual(['/ok']);
+    await fs.rm(parent, { recursive: true });
+  });
 });
 
 describe('infer → OpenAPI', () => {
