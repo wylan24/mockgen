@@ -4,6 +4,12 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.1.0-alpha.3] - 2026-10-31
+
+### Changed
+
+- Releases are published with npm trusted publishing instead of a stored token, and `latest` now follows the newest pre-release until 1.0, so `npx @wylan24/mockgen` always gets the current version.
+
 ## [0.1.0-alpha.2] - 2026-10-31
 
 ### Added
@@ -36,6 +42,7 @@ First public alpha.
 - Load errors show paths relative to the working directory, and a busy port gets a clear message.
 - Lower memory use: only Faker's English locale is loaded.
 
-[Unreleased]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.2...HEAD
+[Unreleased]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.3...HEAD
+[0.1.0-alpha.3]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.2...v0.1.0-alpha.3
 [0.1.0-alpha.2]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.1...v0.1.0-alpha.2
 [0.1.0-alpha.1]: https://github.com/wylan24/mockgen/releases/tag/v0.1.0-alpha.1

@@ -6,9 +6,9 @@ name: Release
 # Run it manually ("Run workflow" in the Actions tab) to point a dist-tag at an
 # already-published version, e.g. to move `latest` back after a bad release.
 #
-# One-time setup: add an npm automation token as the NPM_TOKEN repository secret,
-# or configure this workflow as a trusted publisher on npmjs.com (then the token
-# isn't needed after the first publish).
+# Publishing uses npm trusted publishing (OIDC), no token: this repo and workflow
+# file are registered as a trusted publisher of @wylan24/mockgen on npmjs.com,
+# allowed to `npm publish` and `npm dist-tag`. Renaming this file breaks that link.
 
 on:
   push:
@@ -37,6 +37,8 @@ jobs:
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
+      # Trusted publishing needs npm 11.5.1 or later.
+      - run: npm install -g npm@^11.5.1
       - name: Point the dist-tag at the version
         # Inputs go through env, never straight into the script.
         run: |
@@ -50,7 +52,6 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
           TAG: ${{ inputs.tag }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish:
     if: github.event_name == 'push'
@@ -62,6 +63,8 @@ jobs:
           node-version: 24
           cache: npm
           registry-url: https://registry.npmjs.org
+      # Trusted publishing needs npm 11.5.1 or later.
+      - run: npm install -g npm@^11.5.1
 
       - name: Tag matches package.json
         run: |
@@ -89,8 +92,6 @@ jobs:
         run: |
           if [[ "$GITHUB_REF_NAME" == *-* ]]; then tag=next; else tag=latest; fi
           npm publish --provenance --access public --tag "$tag"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       # Until there is a stable release, `latest` is itself a pre-release; keep it on
       # the newest one so `npx @wylan24/mockgen` gets current features.
@@ -101,8 +102,6 @@ jobs:
           latest="$(npm view "$name@latest" version)"
           if [[ "$latest" == *-* ]]; then npm dist-tag add "$name@${GITHUB_REF_NAME#v}" latest; fi
           npm dist-tag ls "$name"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: GitHub release
         run: |
