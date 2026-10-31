@@ -3,8 +3,8 @@
   "specs": {
     "apple-app-store-connect": {
       "invalid": 2398,
-      "cause": "mockgen",
-      "note": "Mostly a spec bug: oneOf lists the same schema object twice (included[], errors[].source). Undiagnosed: GET /v1/appInfos/{id} included[].type enum mismatch."
+      "cause": "spec",
+      "note": "oneOf lists the same schema object several times (included[] on appCategories/appInfos), and errors[].source is a oneOf of two all-optional objects; no value matches exactly one branch"
     },
     "codat-accounting": {
       "invalid": 20,
@@ -17,29 +17,19 @@
       "note": "oneOf error bodies (409/422 on contents and blobs) whose branches have no required fields; any realistic object matches both"
     },
     "linode": {
-      "invalid": 56,
-      "cause": "mockgen",
-      "note": "Spec bugs: identical Credit Card / Google Pay oneOf branches; label pattern (?!..) only admits 2 characters but minLength is 3. Undiagnosed: backups automatic[].type enum mismatch."
+      "invalid": 52,
+      "cause": "spec",
+      "note": "payment method oneOf has identical Credit Card / Google Pay branches; label pattern ^[a-zA-Z]((?!--|__|..)…)+$ uses `..` (any two chars), so it only admits 2-character labels while minLength is 3"
     },
     "nexmo-verify": {
       "invalid": 7,
       "cause": "spec",
       "note": "oneOf error bodies whose branches are all-optional objects with the same fields"
     },
-    "rebilly": {
-      "invalid": 35,
-      "cause": "mockgen",
-      "note": "Undiagnosed: kyc-documents oneOf over document types matches 0 or 2 branches; ready-to-pay feature oneOf."
-    },
     "shipengine": {
       "invalid": 183,
-      "cause": "mockgen",
-      "note": "Spec bug: allOf members each set additionalProperties: false (links, advanced_options). Undiagnosed: url-format hrefs, address_residential_indicator enum, created_at pattern."
-    },
-    "telnyx": {
-      "invalid": 4,
       "cause": "spec",
-      "note": "detail_records oneOf branches have no required fields and rely on discriminator, which JSON Schema validation ignores"
+      "note": "wrappers set additionalProperties: false next to allOf, so they forbid every property (including required ones); carrier settings oneOf branches each accept only {}; created_at is both date-time and an se-id pattern"
     },
     "vercel": {
       "invalid": 37,

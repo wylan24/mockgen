@@ -1,6 +1,7 @@
 import path from 'node:path';
 import $RefParser from '@apidevtools/json-schema-ref-parser';
 import type { MockModel, MockResponse, MockRoute, Schema } from './model.js';
+import { DISCRIMINATOR, type Discriminator, fits, mergeAllOf } from './schema.js';
 
 export const METHODS = ['get', 'put', 'post', 'delete', 'patch', 'options', 'head', 'trace'] as const;
 
@@ -38,6 +39,13 @@ export async function loadOpenApi(file: string): Promise<MockModel> {
 
   const warnings: string[] = [];
   const routes: MockRoute[] = [];
+  resolveDiscriminators(doc, (ref) => {
+    try {
+      return parser.$refs.get(ref) as Schema;
+    } catch {
+      return undefined;
+    }
+  });
 
   for (const [routePath, pathItem] of Object.entries<any>(doc.paths ?? {})) {
     if (!pathItem || typeof pathItem !== 'object') continue;
@@ -66,6 +74,48 @@ export async function loadOpenApi(file: string): Promise<MockModel> {
     warnings,
     sources: parser.$refs.paths().filter((p) => !/^https?:/.test(p)),
   };
+}
+
+/**
+ * Attach each `discriminator`'s value → branch mapping to its schema. Dereferencing
+ * turned the mapping's `$ref` strings into nothing we can follow, so they're resolved
+ * here, by identity. Branches without an explicit mapping use their component name,
+ * as the spec says. Only discriminators that cover every branch are attached.
+ */
+function resolveDiscriminators(doc: any, resolve: (ref: string) => Schema | undefined) {
+  const names = new Map<object, string>();
+  for (const [name, s] of Object.entries<Schema>(doc.components?.schemas ?? {})) if (s && typeof s === 'object') names.set(s, name);
+  const lookup = (ref: string) => (/[#/]/.test(ref) ? resolve(ref) : doc.components?.schemas?.[ref]);
+
+  const seen = new Set<object>();
+  const visit = (node: unknown) => {
+    if (!node || typeof node !== 'object' || seen.has(node)) return;
+    seen.add(node);
+    if (Array.isArray(node)) return node.forEach(visit);
+    const s = node as Schema;
+    const branches: Schema[] | undefined = s.oneOf ?? s.anyOf;
+    const property = s.discriminator?.propertyName;
+    if (typeof property === 'string' && Array.isArray(branches)) {
+      const mapping: Discriminator['mapping'] = [];
+      for (const [value, ref] of Object.entries<string>(s.discriminator.mapping ?? {})) {
+        const target = lookup(ref);
+        if (target && branches.includes(target)) mapping.push({ value, schema: target });
+      }
+      for (const b of branches) {
+        if (mapping.some((m) => m.schema === b)) continue;
+        // Implicit mapping is the component name, but most specs instead pin the
+        // property to one value (`type: {enum: [track]}`); prefer whichever fits.
+        const prop = (b.allOf ? mergeAllOf(b) : b).properties?.[property];
+        const pinned = prop && ('const' in prop ? [prop.const] : Array.isArray(prop.enum) && prop.enum.length === 1 ? prop.enum : undefined);
+        const name = names.get(b);
+        const value = pinned?.[0] ?? (name && (!prop || fits(name, prop)) ? name : undefined);
+        if (typeof value === 'string') mapping.push({ value, schema: b });
+      }
+      if (branches.every((b) => mapping.some((m) => m.schema === b))) (s as any)[DISCRIMINATOR] = { property, mapping } satisfies Discriminator;
+    }
+    for (const v of Object.values(s)) visit(v);
+  };
+  visit(doc);
 }
 
 function collectResponses(responses: Record<string, any>, label: string, warnings: string[]): MockResponse[] {

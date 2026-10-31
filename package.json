@@ -44,7 +44,8 @@
     "serve:example": "npm run build && node dist/cli.js serve examples/petstore.yaml",
     "prepublishOnly": "npm run build",
     "corpus:fetch": "tsx scripts/corpus-fetch.ts",
-    "corpus": "tsx scripts/corpus.ts"
+    "corpus": "tsx scripts/corpus.ts",
+    "corpus:explain": "tsx scripts/corpus-explain.ts"
   },
   "dependencies": {
     "@apidevtools/json-schema-ref-parser": "^16.0.5",

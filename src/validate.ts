@@ -1,6 +1,7 @@
 import { Ajv2020, type ValidateFunction } from 'ajv/dist/2020.js';
 import addFormatsModule from 'ajv-formats';
 import type { Schema } from './model.js';
+import { discriminatorOf } from './schema.js';
 
 // Validates generated responses against their schemas. OpenAPI schemas aren't quite
 // JSON Schema (3.0 has `nullable` and boolean exclusive bounds), and dereferenced
@@ -108,6 +109,20 @@ function convertObject(node: Schema, openapi30: boolean, child: (s: unknown) => 
     else if (SCHEMA_ARRAY_KEYWORDS.has(k) && Array.isArray(v)) out[k] = v.map(child);
     else if (SCHEMA_MAP_KEYWORDS.has(k) && isObject(v)) out[k] = Object.fromEntries(Object.entries(v).map(([p, s]) => [p, child(s)]));
     else if (k !== '$id' && k !== '$schema') out[k] = v;
+  }
+
+  // OpenAPI semantics: a discriminator picks the branch, so branches that only differ
+  // by the discriminator value don't count as overlapping.
+  const disc = node.oneOf || node.anyOf ? discriminatorOf(node) : undefined;
+  if (disc) {
+    delete out.oneOf;
+    delete out.anyOf;
+    const p = disc.property;
+    out.allOf = [
+      ...(out.allOf ?? []),
+      { type: 'object', required: [p], properties: { [p]: { enum: disc.mapping.map((m) => m.value) } } },
+      ...disc.mapping.map((m) => ({ if: { properties: { [p]: { const: m.value } } }, then: child(m.schema) })),
+    ];
   }
 
   // Responses never contain writeOnly properties, so they can't be required there.

@@ -1,7 +1,7 @@
 import { Faker, base, en } from '@faker-js/faker';
 import RandExp from 'randexp';
 import type { Schema } from './model.js';
-import { countMatches, fits, mergeAllOf, typeOf } from './schema.js';
+import { countMatches, type Discriminator, discriminatorOf, fits, mergeAllOf, typeOf } from './schema.js';
 import { looksLikeDate, looksLikeDateTime, numberByName, stringByName, type RecordContext } from './heuristics.js';
 
 export interface GenerateOptions {
@@ -90,7 +90,9 @@ function lean(ctx: Ctx): boolean {
  * checked: it must satisfy its branch, and for `oneOf` no other branch.
  */
 function genChoice(schema: Schema, choices: Schema[], exclusive: boolean, ctx: Ctx): unknown {
-  const { oneOf, anyOf, ...rest } = schema;
+  const { oneOf, anyOf, discriminator, ...rest } = schema;
+  const disc = discriminatorOf(schema);
+  if (disc) return genDiscriminated(rest, disc, ctx);
   // Deep in the tree, prefer the cheapest branch (`string` over an expanded object).
   const order = lean(ctx) ? [...choices].sort((a, b) => cost(a) - cost(b)) : faker.helpers.shuffle([...choices]);
   let fallback: unknown;
@@ -108,6 +110,22 @@ function genChoice(schema: Schema, choices: Schema[], exclusive: boolean, ctx: C
     if (!exclusive) break;
   }
   return fallback;
+}
+
+/** With a discriminator the branch is chosen by value, and the record carries that value. */
+function genDiscriminated(rest: Schema, disc: Discriminator, ctx: Ctx): unknown {
+  const shared = Object.keys(rest).length > 0;
+  const branchOf = (m: Discriminator['mapping'][number]) => (shared ? mergeAllOf({ allOf: [rest, m.schema] }) : m.schema);
+  // Skip mapping values the branch's own property schema rejects (a spec bug, but common).
+  const usable = disc.mapping.filter((m) => {
+    const s = branchOf(m);
+    const prop = (s.allOf ? mergeAllOf(s) : s).properties?.[disc.property];
+    return !prop || fits(m.value, prop);
+  });
+  const entry = faker.helpers.arrayElement(usable.length ? usable : disc.mapping);
+  const value = gen(branchOf(entry), ctx);
+  if (value && typeof value === 'object' && !Array.isArray(value)) (value as Record<string, unknown>)[disc.property] = entry.value;
+  return value;
 }
 
 function cost(s: Schema): number {

@@ -27,8 +27,8 @@ jobs:
       - run: node dist/cli.js validate examples/samples
 
   corpus:
-    # The release gate: 50+ real-world specs must load (≥95%) and every
-    # generated response must validate against its schema (100%).
+    # The release gate: 50+ real-world specs must load (≥95%) and every generated
+    # response must validate, apart from the spec bugs listed in corpus/baseline.json.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -42,7 +42,7 @@ jobs:
           path: corpus/.cache
           key: corpus-${{ hashFiles('corpus/specs.json') }}
       - run: npm run corpus:fetch
-      - run: npm run corpus
+      - run: npm run corpus -- --strict
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -105,7 +105,7 @@ When you're ready for a real spec, `mockgen infer ./samples -o openapi.yaml` wri
 - [x] Mock server: CORS, request log, status/latency simulation, hot reload
 - [x] Sample-response input (folder of JSON files → inferred schema) and `mockgen infer`
 - [x] List/detail consistency (`/users/{id}` returns the user from `/users`) and pagination
-- [x] Spec corpus of 50+ real-world APIs in CI (4 specs still have mockgen-caused failures; see `corpus/baseline.json`)
+- [x] Spec corpus of 50+ real-world APIs in CI: every spec loads, and every generated response validates apart from documented spec bugs
 - [ ] Stateful CRUD, `mock.config.ts` overrides, Docker image
 
 ## Quality: the spec corpus
@@ -116,9 +116,12 @@ mockgen is tested against 57 real-world OpenAPI specs (Stripe, GitHub, Twilio, B
 npm run corpus:fetch        # download the specs once (~60 MB, cached in corpus/.cache)
 npm run corpus              # load + generate + validate everything
 npm run corpus -- stripe    # just one spec
+npm run corpus:explain -- linode "GET /linode/instances" 200   # why a response fails
 ```
 
-Real specs contain schemas no value can satisfy (identical `oneOf` branches, `allOf: [string, null]`, conflicting enums). [corpus/baseline.json](corpus/baseline.json) records each spec's known failures and whether the spec or mockgen is at fault. CI fails if any spec gets worse; `npm run corpus -- --strict` (the 1.0 release gate) also fails while any mockgen-caused failure remains.
+Validation follows OpenAPI semantics: 3.0 `nullable`, boolean exclusive bounds, `writeOnly` fields absent from responses, and `discriminator` choosing the `oneOf` branch.
+
+Some real specs contain schemas no value can satisfy (the same schema twice in a `oneOf`, `allOf: [string, null]`, contradictory enums). [corpus/baseline.json](corpus/baseline.json) lists each one with the reason. CI runs `npm run corpus -- --strict`, which fails if any spec gets worse than its baseline or any failure isn't a documented spec bug.
 
 ## Development
 

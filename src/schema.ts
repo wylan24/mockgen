@@ -18,13 +18,32 @@ export function typeOf(schema: Schema): string | undefined {
   return undefined;
 }
 
+/**
+ * OpenAPI `discriminator`s, resolved at load time. Plain JSON Schema can't tell
+ * `oneOf` branches apart when they differ only by a discriminator value, so the
+ * generator, `fits` and the validator all pick the branch from this mapping.
+ */
+export const DISCRIMINATOR = Symbol.for('mockgen.discriminator');
+
+export interface Discriminator {
+  property: string;
+  /** One entry per `oneOf`/`anyOf` branch. */
+  mapping: { value: string; schema: Schema }[];
+}
+
+export function discriminatorOf(schema: Schema): Discriminator | undefined {
+  return (schema as Record<symbol, Discriminator | undefined>)[DISCRIMINATOR];
+}
+
 const LOWER_BOUNDS = new Set(['minimum', 'minLength', 'minItems', 'minProperties']);
 const UPPER_BOUNDS = new Set(['maximum', 'maxLength', 'maxItems', 'maxProperties']);
 
 /**
  * Merge `allOf` members into one schema: properties and required lists combine.
  * A member with `additionalProperties: false` only allows its own properties, so
- * properties from other members are dropped (that's what a validator enforces).
+ * optional properties from other members are dropped (that's what a validator
+ * enforces). Required ones are kept: such a spec can't be satisfied anyway, and
+ * a realistic value beats a placeholder.
  */
 export function mergeAllOf(schema: Schema): Schema {
   const { allOf, ...rest } = schema;
@@ -35,7 +54,7 @@ export function mergeAllOf(schema: Schema): Schema {
     if (part.additionalProperties === false) closed.push(new Set(Object.keys(part.properties ?? {})));
     const flat = part.allOf ? mergeAllOf(part) : part;
     for (const [k, v] of Object.entries(flat)) {
-      if (k === 'properties') merged.properties = { ...merged.properties, ...v };
+      if (k === 'properties') merged.properties = mergeProperties(merged.properties, v);
       else if (k === 'required') merged.required = [...new Set([...(merged.required ?? []), ...v])];
       else if (!(k in merged)) merged[k] = v;
       // Every member applies, so constraints narrow rather than first-one-wins.
@@ -45,9 +64,22 @@ export function mergeAllOf(schema: Schema): Schema {
     }
   }
   if (closed.length && merged.properties) {
-    merged.properties = Object.fromEntries(Object.entries(merged.properties).filter(([k]) => closed.every((allowed) => allowed.has(k))));
+    const required = new Set(merged.required ?? []);
+    merged.properties = Object.fromEntries(
+      Object.entries(merged.properties).filter(([k]) => required.has(k) || closed.every((allowed) => allowed.has(k))),
+    );
   }
   return merged;
+}
+
+/** A property defined by two members must satisfy both definitions. */
+function mergeProperties(a: Record<string, Schema> | undefined, b: Record<string, Schema>): Record<string, Schema> {
+  const out = { ...a };
+  for (const [key, schema] of Object.entries(b)) {
+    const existing = out[key];
+    out[key] = existing && existing !== schema ? { allOf: [existing, schema] } : schema;
+  }
+  return out;
 }
 
 /**
@@ -68,16 +100,25 @@ function check(value: unknown, schema: Schema | boolean | undefined, depth: numb
   const s = schema;
   const d = depth + 1;
 
-  if (value === null && s.nullable === true) return true; // OpenAPI 3.0
-  if (Array.isArray(s.enum) && !s.enum.some((e: unknown) => equal(e, value))) return false;
+  // OpenAPI 3.0.3: `nullable` widens `type` (and `enum`), but null must still pass
+  // oneOf/allOf and the rest. Mirrors how validate.ts converts it.
+  const nullable = value === null && s.nullable === true;
+  if (nullable && !s.type) return true;
+  if (Array.isArray(s.enum) && !nullable && !s.enum.some((e: unknown) => equal(e, value))) return false;
   if ('const' in s && !equal(s.const, value)) return false;
   if (Array.isArray(s.allOf) && !s.allOf.every((p: Schema) => check(value, p, d))) return false;
-  if (Array.isArray(s.anyOf) && !s.anyOf.some((p: Schema) => check(value, p, d))) return false;
-  if (Array.isArray(s.oneOf) && countMatches(value, s.oneOf, d, 2) !== 1) return false;
+  const disc = s.oneOf || s.anyOf ? discriminatorOf(s) : undefined;
+  if (disc) {
+    const branch = value && typeof value === 'object' ? disc.mapping.find((m) => m.value === (value as Record<string, unknown>)[disc.property]) : undefined;
+    if (!branch || !check(value, branch.schema, d)) return false;
+  } else {
+    if (Array.isArray(s.anyOf) && !s.anyOf.some((p: Schema) => check(value, p, d))) return false;
+    if (Array.isArray(s.oneOf) && countMatches(value, s.oneOf, d, 2) !== 1) return false;
+  }
   if (s.not !== undefined && check(value, s.not, d)) return false;
 
   const types: string[] = Array.isArray(s.type) ? s.type : s.type ? [s.type] : [];
-  if (types.length && !types.some((t) => isType(value, t))) return false;
+  if (types.length && !nullable && !types.some((t) => isType(value, t))) return false;
 
   if (typeof value === 'number') return checkNumber(value, s);
   if (typeof value === 'string') return checkString(value, s);
