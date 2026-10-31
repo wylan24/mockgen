@@ -53,6 +53,7 @@ mockgen infer <dir> [-o openapi.yaml]  # Write the schema inferred from samples 
 | `-s, --seed` | `1` | Seed for generated data |
 | `-d, --delay` | `0` | Delay every response, e.g. `300ms` |
 | `-r, --records` | `50` | Records in every list endpoint's collection |
+| `-l, --locale` | `en` | Language and region for names, addresses and phone numbers, e.g. `de`, `ja`, `pt_BR` |
 | `--no-watch` | | Disable hot reload |
 | `-o, --out` | stdout | `infer` output file (`.yaml` or `.json`) |
 
@@ -65,6 +66,16 @@ curl -H 'X-Mock-Status: 404' localhost:4010/users/1   # the spec's 404 response
 curl 'localhost:4010/users/1?__status=503'            # undocumented codes work too
 curl -H 'X-Mock-Delay: 1500' localhost:4010/users     # slow this one down
 ```
+
+### Other languages
+
+Names, addresses, companies and phone numbers follow `--locale`. It takes any of the 76 locales [Faker ships](https://fakerjs.dev/guide/localization.html#available-locales), such as `de`, `fr`, `ja`, `pt_BR` or `zh_CN`:
+
+```bash
+mockgen serve ./openapi.yaml --locale de
+```
+
+The output stays deterministic per locale, and emails and usernames stay valid ASCII. Free text like `description` and `bio` is Latin placeholder text in every locale.
 
 ### Lists and pagination
 
@@ -87,7 +98,7 @@ A page past the end is empty, even if the schema sets `minItems`.
 ```ts
 import { createMockServer } from '@wylan24/mockgen';
 
-const mock = await createMockServer({ spec: './openapi.yaml', seed: 1 });
+const mock = await createMockServer({ spec: './openapi.yaml', seed: 1, locale: 'en' });
 const url = await mock.listen(0); // random free port
 // ... run tests against url ...
 await mock.close();

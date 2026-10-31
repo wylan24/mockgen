@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs, styleText } from 'node:util';
-import { generate } from './generate.js';
+import { assertLocale, generate } from './generate.js';
 import type { MockModel } from './model.js';
 import { loadSource } from './load.js';
 import { formatOpenApi, loadSamples } from './samples.js';
@@ -26,6 +26,8 @@ Options
   -s, --seed <n>      Seed for generated data (default 1)
   -d, --delay <ms>    Delay every response, e.g. 300 or 300ms
   -r, --records <n>   Records per list endpoint, paged with ?page=&limit= (default 50)
+  -l, --locale <code> Language and region for names, addresses and text, e.g. de, ja,
+                      pt_BR (default en)
   -o, --out <file>    infer: write here instead of stdout (.yaml or .json)
       --no-watch      Disable hot reload
   -h, --help          Show this help
@@ -49,6 +51,7 @@ async function main(argv: string[]) {
       delay: { type: 'string', short: 'd', default: '0' },
       out: { type: 'string', short: 'o' },
       records: { type: 'string', short: 'r', default: '50' },
+      locale: { type: 'string', short: 'l' },
       watch: { type: 'boolean', default: true },
       help: { type: 'boolean', short: 'h' },
       version: { type: 'boolean', short: 'v' },
@@ -61,13 +64,21 @@ async function main(argv: string[]) {
   if (!spec) fail(`Missing <spec>. Try: mockgen ${command} ./openapi.yaml`);
 
   const seed = int(values.seed, '--seed');
+  const locale = values.locale;
+  if (locale) {
+    try {
+      assertLocale(locale);
+    } catch (err) {
+      fail((err as Error).message);
+    }
+  }
   switch (command) {
     case 'serve':
-      return serve(spec, { port: int(values.port, '--port'), host: values.host, seed, delay: int(values.delay.replace(/ms$/, ''), '--delay'), watch: values.watch, records: int(values.records, '--records') });
+      return serve(spec, { port: int(values.port, '--port'), host: values.host, seed, delay: int(values.delay.replace(/ms$/, ''), '--delay'), watch: values.watch, records: int(values.records, '--records'), locale });
     case 'generate':
-      return generateCmd(spec, rest.join(' '), seed, int(values.records, '--records'));
+      return generateCmd(spec, rest.join(' '), seed, int(values.records, '--records'), locale);
     case 'validate':
-      return validate(spec, seed);
+      return validate(spec, seed, locale);
     case 'infer':
       return infer(spec, values.out);
     default:
@@ -75,11 +86,11 @@ async function main(argv: string[]) {
   }
 }
 
-async function serve(spec: string, opts: { port: number; host: string; seed: number; delay: number; watch: boolean; records: number }) {
+async function serve(spec: string, opts: { port: number; host: string; seed: number; delay: number; watch: boolean; records: number; locale?: string }) {
   const started = performance.now();
   const model = await loadSource(spec);
   printWarnings(model);
-  const mock = createMockServer({ model, seed: opts.seed, delay: opts.delay, records: opts.records, log: (line) => console.log(styleText('dim', line)) });
+  const mock = createMockServer({ model, seed: opts.seed, delay: opts.delay, records: opts.records, locale: opts.locale, log: (line) => console.log(styleText('dim', line)) });
   const url = await mock.listen(opts.port, opts.host).catch((err: NodeJS.ErrnoException) => {
     if (err.code === 'EADDRINUSE') fail(`Port ${opts.port} is already in use on ${opts.host}. Pick another with --port ${opts.port + 1}, or --port 0 for any free port.`);
     if (err.code === 'EACCES') fail(`No permission to use port ${opts.port} on ${opts.host}. Ports below 1024 usually need admin rights; try --port 4010.`);
@@ -146,19 +157,19 @@ function watchSources(model: MockModel, reload: () => Promise<MockModel | undefi
   watch();
 }
 
-async function generateCmd(spec: string, route: string, seed: number, records: number) {
+async function generateCmd(spec: string, route: string, seed: number, records: number, locale?: string) {
   const model = await loadSource(spec);
   if (route) {
     const [method = 'GET', p = '/'] = route.includes(' ') ? route.split(/\s+/) : ['GET', route];
     const [pathname = '/', query] = p.split('?');
-    const result = respond(model, { method: method.toUpperCase(), path: pathname, query, seed, records });
+    const result = respond(model, { method: method.toUpperCase(), path: pathname, query, seed, records, locale });
     if (result.status >= 400 && !model.routes.some((r) => r.pattern.test(pathname))) fail((result.body as any).message);
     return console.log(JSON.stringify(result.body, null, 2));
   }
   const out: Record<string, unknown> = {};
   for (const r of model.routes) {
     const res = r.responses.find((x) => x.status >= 200 && x.status < 300) ?? r.responses[0];
-    out[`${r.method} ${r.path}`] = res?.hasExample ? res.example : generate(res?.schema, { seed, key: `${r.method} ${r.path} ${res?.status}` });
+    out[`${r.method} ${r.path}`] = res?.hasExample ? res.example : generate(res?.schema, { seed, locale, key: `${r.method} ${r.path} ${res?.status}` });
   }
   console.log(JSON.stringify(out, null, 2));
 }
@@ -173,7 +184,7 @@ async function infer(dir: string, out: string | undefined) {
   console.error(`${styleText('green', '✔')} Wrote ${model.routes.length} routes to ${out}`);
 }
 
-async function validate(spec: string, seed: number) {
+async function validate(spec: string, seed: number, locale?: string) {
   const model = await loadSource(spec);
   printWarnings(model);
   const validator = new ResponseValidator(model.openapi);
@@ -184,7 +195,7 @@ async function validate(spec: string, seed: number) {
     for (const res of r.responses) {
       if (!res.schema || res.hasExample) continue;
       const label = `${r.method} ${r.path} ${res.status}`;
-      const value = generate(res.schema, { seed, key: label });
+      const value = generate(res.schema, { seed, locale, key: label });
       try {
         const result = validator.validate(res.schema, value);
         if (!result.valid) invalid.push(`${label}: ${result.errors}`);

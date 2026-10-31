@@ -1,7 +1,7 @@
 import { loadSource } from './load.js';
 import { createMockServer as createServer, type MockServer, type MockServerOptions } from './server.js';
 
-export { generate, type GenerateOptions } from './generate.js';
+export { availableLocales, generate, type GenerateOptions } from './generate.js';
 export type { MockModel, MockResponse, MockRoute, Schema } from './model.js';
 export { inferSchema, SchemaInferrer } from './infer.js';
 export { loadSource } from './load.js';

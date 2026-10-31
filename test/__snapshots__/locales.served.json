@@ -1,0 +1,53 @@
+{
+  "de": {
+    "id": 7,
+    "firstName": "Matthis",
+    "lastName": "Heinze",
+    "username": "Matthis.Heinze",
+    "email": "matthis_heinze@gmail.com",
+    "avatarUrl": "https://cdn.jsdelivr.net/gh/faker-js/assets-person-portrait/female/512/69.jpg",
+    "role": "admin",
+    "bio": "Animi ea officia deleniti.",
+    "createdAt": "2025-11-04T21:18:35.293Z",
+    "address": {
+      "street": "Hubertusweg 30b",
+      "city": "Meerbusch",
+      "zip": "06025",
+      "country": "Guadeloupe"
+    }
+  },
+  "ja": {
+    "id": 7,
+    "firstName": "瑛太",
+    "lastName": "小山",
+    "username": "mzfhm2.i6ni9d",
+    "email": "mzfhm2_i6ni9d@ezweb.ne.jp",
+    "avatarUrl": "https://cdn.jsdelivr.net/gh/faker-js/assets-person-portrait/female/512/69.jpg",
+    "role": "admin",
+    "bio": "こうえん 隆起 社員 こっせつ.",
+    "createdAt": "2025-11-04T21:18:35.293Z",
+    "address": {
+      "street": "5丁目7番3号",
+      "city": "港秀樹市",
+      "zip": "253-5105",
+      "country": "カナダ"
+    }
+  },
+  "pt_BR": {
+    "id": 7,
+    "firstName": "Benício",
+    "lastName": "Reis",
+    "username": "Benicio.Reis",
+    "email": "benicio.reis59@yahoo.com",
+    "avatarUrl": "https://avatars.githubusercontent.com/u/49977177",
+    "role": "member",
+    "bio": "Veritatis amet animi ea. Deleniti repudiandae molestiae est enim perferendis voluptatibus similique. Quidem eaque incidunt.",
+    "createdAt": "2025-01-24T12:18:58.666Z",
+    "address": {
+      "street": "51051 Alameda Cauã",
+      "city": "Gael do Norte",
+      "zip": "21250-458",
+      "country": "Myanmar"
+    }
+  }
+}

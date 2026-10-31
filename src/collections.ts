@@ -79,6 +79,7 @@ export interface BuildPageInput {
   query: URLSearchParams;
   origin?: string;
   seed?: number;
+  locale?: string;
   shape: ListShape;
   /** Generated response body; for wrapped lists, its metadata is filled in place. */
   body: unknown;
@@ -104,17 +105,17 @@ export function buildPage(input: BuildPageInput): { body: unknown; headers: Reco
   const detailProps: Record<string, Schema> = (input.detailSchema?.allOf ? mergeAllOf(input.detailSchema) : input.detailSchema)?.properties ?? {};
   for (let i = win.offset; i < Math.min(total, win.offset + win.limit); i++) {
     const key = `${input.requestPath}#${i}`;
-    const id = idKey ? recordId(props[idKey]!, i, input.seed, key) : undefined;
+    const id = idKey ? recordId(props[idKey]!, i, input.seed, key, input.locale) : undefined;
     const detail = id !== undefined ? input.detail?.(id) : undefined;
     if (detail && !projectable) {
       // Items that are a oneOf/anyOf can't be projected field by field: generate, then overlay.
-      const record = generate(shape.itemSchema, { seed: input.seed, key }) as Record<string, unknown>;
+      const record = generate(shape.itemSchema, { seed: input.seed, locale: input.locale, key }) as Record<string, unknown>;
       for (const prop of Object.keys(record)) if (prop in detail && fits(detail[prop], props[prop])) record[prop] = detail[prop];
       items.push(record);
       continue;
     }
     if (!detail) {
-      const record = generate(shape.itemSchema, { seed: input.seed, key }) as Record<string, unknown>;
+      const record = generate(shape.itemSchema, { seed: input.seed, locale: input.locale, key }) as Record<string, unknown>;
       if (idKey && id !== undefined && fits(id, props[idKey])) record[idKey] = id;
       items.push(record);
       continue;
@@ -124,10 +125,10 @@ export function buildPage(input: BuildPageInput): { body: unknown; headers: Reco
     const record: Record<string, unknown> = {};
     for (const [prop, propSchema] of Object.entries(props)) {
       if (prop in detail && (detailProps[prop] === propSchema || fits(detail[prop], propSchema))) record[prop] = detail[prop];
-      else if (required.has(prop)) record[prop] = generate(propSchema, { seed: input.seed, key: `${key}.${prop}` });
+      else if (required.has(prop)) record[prop] = generate(propSchema, { seed: input.seed, locale: input.locale, key: `${key}.${prop}` });
     }
     // Required keys without a property schema still have to be there.
-    for (const prop of required) if (!(prop in record)) record[prop] = prop in detail ? detail[prop] : generate({}, { seed: input.seed, key: `${key}.${prop}` });
+    for (const prop of required) if (!(prop in record)) record[prop] = prop in detail ? detail[prop] : generate({}, { seed: input.seed, locale: input.locale, key: `${key}.${prop}` });
     items.push(record);
   }
 
@@ -190,13 +191,13 @@ function fillMeta(obj: Record<string, unknown>, schema: Schema | undefined, m: M
 }
 
 /** Record i's id: sequential for numeric ids, otherwise generated from the id schema alone. */
-function recordId(idSchema: Schema, i: number, seed: number | undefined, key: string): unknown {
+function recordId(idSchema: Schema, i: number, seed: number | undefined, key: string, locale?: string): unknown {
   const t = typeOf(idSchema);
   if (t === 'integer' || t === 'number') {
     const id = Math.max(1, Math.ceil(idSchema.minimum ?? 1)) + i;
     if (idSchema.maximum === undefined || id <= idSchema.maximum) return id;
   }
-  return generate(idSchema, { seed, key: `${key}.id` });
+  return generate(idSchema, { seed, locale, key: `${key}.id` });
 }
 
 function navLinks(input: BuildPageInput, win: PageWindow, hasMore: boolean): MetaInfo['links'] {

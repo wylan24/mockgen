@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import { createRequire } from 'node:module';
+import path from 'node:path';
 import type { Faker } from '@faker-js/faker';
 import { faker as enFaker } from '@faker-js/faker/locale/en';
 import RandExp from 'randexp';
@@ -12,16 +15,55 @@ export interface GenerateOptions {
   key?: string;
   /** Recursion limit for circular schemas. */
   maxDepth?: number;
+  /** Faker locale for names, addresses and text, e.g. `de` or `pt_BR`. Default `en`. */
+  locale?: string;
 }
 
 // Faker's date helpers default to "now"; pin them so output never drifts.
 const REF_DATE = new Date('2026-01-01T00:00:00.000Z');
 
-// The package root loads every locale (~23 MB of RSS); the `locale/en` entry only
-// exports a shared instance, so build a private one from its class and definitions.
+// The package root loads every locale (~23 MB of RSS); each `locale/<code>` entry only
+// exports a shared instance, so build private ones from its class and definitions.
+// Locales other than English load on first use (~1 MB each).
 const FakerClass = enFaker.constructor as typeof Faker;
-const faker = new FakerClass({ locale: enFaker.rawDefinitions });
-faker.setDefaultRefDate(REF_DATE);
+const fakers = new Map<string, Faker>([['en', privateFaker(enFaker)]]);
+const require = createRequire(import.meta.url);
+let locales: string[] | undefined;
+
+function privateFaker(shared: Faker): Faker {
+  const f = new FakerClass({ locale: shared.rawDefinitions });
+  f.setDefaultRefDate(REF_DATE);
+  return f;
+}
+
+/** Locale codes Faker ships, e.g. `de`, `ja`, `pt_BR`. */
+export function availableLocales(): string[] {
+  locales ??= fs
+    .readdirSync(path.dirname(require.resolve('@faker-js/faker/locale/en')))
+    .filter((f) => f.endsWith('.js') && f !== 'base.js')
+    .map((f) => f.slice(0, -'.js'.length))
+    .sort();
+  return locales;
+}
+
+/** Throw a readable error for a locale Faker doesn't ship. */
+export function assertLocale(locale: string): void {
+  if (!availableLocales().includes(locale)) throw new Error(`Unknown locale "${locale}". Available: ${availableLocales().join(', ')}`);
+}
+
+/** The Faker for `locale`, loaded on first use. */
+function fakerFor(locale = 'en'): Faker {
+  let f = fakers.get(locale);
+  if (!f) {
+    assertLocale(locale);
+    f = privateFaker((require(`@faker-js/faker/locale/${locale}`) as { faker: Faker }).faker);
+    fakers.set(locale, f);
+  }
+  return f;
+}
+
+/** The Faker for the current `generate` call. Generation is synchronous, so swapping it per call is safe. */
+let faker = fakers.get('en')!;
 
 // Filling every optional field of every nested object explodes on big specs (Stripe
 // objects nest dozens of expandable objects). Past this depth, or once this many
@@ -44,6 +86,7 @@ interface Ctx {
 
 /** Generate a realistic, deterministic value that satisfies `schema`. */
 export function generate(schema: Schema | undefined, opts: GenerateOptions = {}): unknown {
+  faker = fakerFor(opts.locale);
   faker.seed(hash(`${opts.seed ?? 1}:${opts.key ?? ''}`));
   return gen(schema ?? {}, { depth: 0, maxDepth: opts.maxDepth ?? 8, budget: { values: VALUE_BUDGET } });
 }
