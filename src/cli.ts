@@ -82,10 +82,8 @@ async function serve(spec: string, opts: { port: number; host: string; seed: num
   const mock = createMockServer({ model, seed: opts.seed, delay: opts.delay, records: opts.records, log: (line) => console.log(styleText('dim', line)) });
   const url = await mock.listen(opts.port, opts.host);
 
-  console.log(`\n${styleText('bold', model.title)} ${styleText('dim', model.version)}`);
-  for (const r of model.routes) console.log(`  ${styleText('cyan', r.method.padEnd(7))} ${url}${model.basePath}${r.path}`);
-  console.log(`\n${styleText('green', '✔')} Mock server ready at ${styleText('bold', url)} in ${Math.round(performance.now() - started)}ms (seed ${opts.seed})\n`);
-
+  // Watch before announcing "ready": a script that edits the spec as soon as it sees
+  // that line would otherwise race the watcher and its edit could be missed.
   if (opts.watch) watchSources(model, async () => {
     try {
       const next = await loadSource(spec);
@@ -98,6 +96,10 @@ async function serve(spec: string, opts: { port: number; host: string; seed: num
       return undefined;
     }
   });
+
+  console.log(`\n${styleText('bold', model.title)} ${styleText('dim', model.version)}`);
+  for (const r of model.routes) console.log(`  ${styleText('cyan', r.method.padEnd(7))} ${url}${model.basePath}${r.path}`);
+  console.log(`\n${styleText('green', '✔')} Mock server ready at ${styleText('bold', url)} in ${Math.round(performance.now() - started)}ms (seed ${opts.seed})\n`);
 
   const shutdown = () => mock.close().then(() => process.exit(0));
   process.once('SIGINT', shutdown);
