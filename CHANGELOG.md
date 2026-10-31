@@ -17,6 +17,7 @@ First public alpha.
 - Deterministic output: the same seed gives byte-identical responses on every OS and Node version.
 - Stable 50-record collections behind list endpoints, with page/limit, offset and cursor paging, `X-Total-Count` and `Link` headers. List items match their detail routes.
 - CORS by default, a request log, `X-Mock-Status` and `X-Mock-Delay` for errors and latency, and hot reload that keeps serving the last good version when the spec breaks.
+- `--locale` (and a `locale` option) for names, addresses and phone numbers in any of Faker's 76 locales.
 
 ### Fixed
 

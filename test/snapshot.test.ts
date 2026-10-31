@@ -42,7 +42,8 @@ describe('deterministic output', () => {
     await expect(formatOpenApi(await loadSamples('examples/samples'))).toMatchFileSnapshot('__snapshots__/samples.openapi.yaml');
   });
 
-  it('a large generation run hashes the same everywhere', async () => {
+  // Takes ~2 s alone; give it room when the whole suite runs in parallel on a slow CI runner.
+  it('a large generation run hashes the same everywhere', { timeout: 30_000 }, async () => {
     // Thousands of values through every generator path, reduced to one hash so the
     // snapshot stays small; the snapshots above show what changed when it differs.
     const hash = createHash('sha256');

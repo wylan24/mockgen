@@ -1,7 +1,7 @@
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { buildPage, findDetailRoute, findListShape } from './collections.js';
-import { generate } from './generate.js';
+import { assertLocale, generate } from './generate.js';
 import type { MockModel, MockResponse, MockRoute, Schema } from './model.js';
 import { fits, mergeAllOf } from './schema.js';
 
@@ -13,6 +13,8 @@ export interface MockServerOptions {
   delay?: number;
   /** Size of every list endpoint's collection, paged through with `?page=`/`?limit=`. Default 50. */
   records?: number;
+  /** Faker locale for names, addresses and text, e.g. `de` or `pt_BR`. Default `en`. */
+  locale?: string;
   /** Called once per request with a one-line summary. */
   log?: (line: string) => void;
 }
@@ -39,6 +41,7 @@ const CORS_HEADERS = {
 };
 
 export function createMockServer(options: MockServerOptions): MockServer {
+  if (options.locale) assertLocale(options.locale);
   let model = options.model;
   const seed = options.seed ?? 1;
 
@@ -56,6 +59,7 @@ export function createMockServer(options: MockServerOptions): MockServer {
         method,
         path: url.pathname,
         seed,
+        locale: options.locale,
         status: header(req, 'x-mock-status') ?? url.searchParams.get('__status') ?? undefined,
         query: url.searchParams,
         origin: req.headers.host ? `http://${req.headers.host}` : undefined,
@@ -112,6 +116,8 @@ export interface RespondInput {
   origin?: string;
   /** Collection size for list endpoints. Default 50. */
   records?: number;
+  /** Faker locale, e.g. `de`. Default `en`. */
+  locale?: string;
 }
 
 /** Produce the mock response for one request. Pure apart from the generator's seed. */
@@ -137,7 +143,7 @@ export function respond(model: MockModel, input: RespondInput): MockResult {
 
   let body: unknown;
   if (response.hasExample) body = structuredClone(response.example);
-  else if (response.schema) body = generate(response.schema, { seed: input.seed, key: `${route.method} ${input.path} ${status}` });
+  else if (response.schema) body = generate(response.schema, { seed: input.seed, locale: input.locale, key: `${route.method} ${input.path} ${status}` });
 
   let headers: Record<string, string> = {};
   // List endpoints (not `/users/{id}`) page through a stable collection.
@@ -153,6 +159,7 @@ export function respond(model: MockModel, input: RespondInput): MockResult {
       query: new URLSearchParams(input.query ?? ''),
       origin: input.origin,
       seed: input.seed,
+      locale: input.locale,
       shape,
       body,
       total: input.records ?? 50,
@@ -160,7 +167,7 @@ export function respond(model: MockModel, input: RespondInput): MockResult {
       detailSchema: linked ? detailResponse.schema : undefined,
       detail: linked
         ? (id) => {
-            const r = respond(model, { method: 'GET', path: `${requestPath}/${encodeURIComponent(String(id))}`, seed: input.seed });
+            const r = respond(model, { method: 'GET', path: `${requestPath}/${encodeURIComponent(String(id))}`, seed: input.seed, locale: input.locale });
             return r.status < 300 && isRecord(r.body) ? r.body : undefined;
           }
         : undefined,
