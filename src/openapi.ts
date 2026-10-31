@@ -8,11 +8,22 @@ export const METHODS = ['get', 'put', 'post', 'delete', 'patch', 'options', 'hea
 export class SpecLoadError extends Error {
   constructor(
     message: string,
+    /** Absolute path of the spec; the message shows paths relative to the working directory. */
     readonly file: string,
   ) {
-    super(`${file}: ${message}`);
+    super(relativePaths(`${file}: ${message.replace(/, open '[^']*'$/, '')}`));
     this.name = 'SpecLoadError';
   }
+}
+
+/**
+ * Shorten absolute paths under the working directory, in any spelling the ref parser
+ * uses: `C:\a\b`, `c:/a/b` (Windows) or `/a/b`. Paths elsewhere are left as they are.
+ */
+function relativePaths(text: string, cwd = process.cwd()): string {
+  const segments = cwd.split(/[\\/]/).filter(Boolean).map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const prefix = (cwd.startsWith('/') ? '[\\\\/]' : '') + segments.join('[\\\\/]') + '[\\\\/]';
+  return text.replace(new RegExp(prefix, process.platform === 'win32' ? 'gi' : 'g'), '');
 }
 
 /** Load an OpenAPI 3.0/3.1 file (YAML or JSON, multi-file `$ref`s allowed) into the normalized model. */

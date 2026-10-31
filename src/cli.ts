@@ -80,7 +80,11 @@ async function serve(spec: string, opts: { port: number; host: string; seed: num
   const model = await loadSource(spec);
   printWarnings(model);
   const mock = createMockServer({ model, seed: opts.seed, delay: opts.delay, records: opts.records, log: (line) => console.log(styleText('dim', line)) });
-  const url = await mock.listen(opts.port, opts.host);
+  const url = await mock.listen(opts.port, opts.host).catch((err: NodeJS.ErrnoException) => {
+    if (err.code === 'EADDRINUSE') fail(`Port ${opts.port} is already in use on ${opts.host}. Pick another with --port ${opts.port + 1}, or --port 0 for any free port.`);
+    if (err.code === 'EACCES') fail(`No permission to use port ${opts.port} on ${opts.host}. Ports below 1024 usually need admin rights; try --port 4010.`);
+    throw err;
+  });
 
   // Watch before announcing "ready": a script that edits the spec as soon as it sees
   // that line would otherwise race the watcher and its edit could be missed.
