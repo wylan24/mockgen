@@ -176,7 +176,7 @@ Bump `version` in `package.json`, commit, then push a matching tag:
 git tag v0.1.0-alpha.1 && git push origin v0.1.0-alpha.1
 ```
 
-The [release workflow](.github/workflows/release.yml) reruns the tests, smoke test and strict corpus gate, publishes to npm with provenance (pre-releases under the `next` dist-tag), and creates the GitHub release. It needs an `NPM_TOKEN` repository secret, or the workflow set up as a trusted publisher on npmjs.com.
+The [release workflow](.github/workflows/release.yml) reruns the tests, smoke test and strict corpus gate, publishes to npm with provenance, and creates the GitHub release. Pre-releases go under the `next` dist-tag, and also under `latest` until a stable version exists. To point a dist-tag at a published version later (for example, to roll `latest` back), run the workflow manually from the Actions tab. It needs an `NPM_TOKEN` repository secret, or the workflow set up as a trusted publisher on npmjs.com.
 
 ## Contributing
 

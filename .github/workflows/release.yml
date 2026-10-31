@@ -3,6 +3,9 @@ name: Release
 # Push a tag like v0.1.0-alpha.1 or v1.0.0 to publish that version to npm with
 # provenance and create a GitHub release. The tag must match package.json.
 #
+# Run it manually ("Run workflow" in the Actions tab) to point a dist-tag at an
+# already-published version, e.g. to move `latest` back after a bad release.
+#
 # One-time setup: add an npm automation token as the NPM_TOKEN repository secret,
 # or configure this workflow as a trusted publisher on npmjs.com (then the token
 # isn't needed after the first publish).
@@ -10,13 +13,47 @@ name: Release
 on:
   push:
     tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published version to tag, e.g. 0.1.0-alpha.2
+        required: true
+      tag:
+        description: Dist-tag to point at it
+        required: true
+        default: latest
 
 permissions:
   contents: write # create the GitHub release
   id-token: write # npm provenance
 
 jobs:
+  dist-tag:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - name: Point the dist-tag at the version
+        # Inputs go through env, never straight into the script.
+        run: |
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ && "$TAG" =~ ^[a-z][a-z0-9-]*$ ]]; then
+            echo "::error::version must look like 1.2.3 or 1.2.3-alpha.1, and tag like latest or next"
+            exit 1
+          fi
+          name="$(node -p "require('./package.json').name")"
+          npm dist-tag add "$name@$VERSION" "$TAG"
+          npm dist-tag ls "$name"
+        env:
+          VERSION: ${{ inputs.version }}
+          TAG: ${{ inputs.tag }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
   publish:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -52,6 +89,18 @@ jobs:
         run: |
           if [[ "$GITHUB_REF_NAME" == *-* ]]; then tag=next; else tag=latest; fi
           npm publish --provenance --access public --tag "$tag"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Until there is a stable release, `latest` is itself a pre-release; keep it on
+      # the newest one so `npx @wylan24/mockgen` gets current features.
+      - name: Point latest at this pre-release while there is no stable release
+        if: contains(github.ref_name, '-')
+        run: |
+          name="$(node -p "require('./package.json').name")"
+          latest="$(npm view "$name@latest" version)"
+          if [[ "$latest" == *-* ]]; then npm dist-tag add "$name@${GITHUB_REF_NAME#v}" latest; fi
+          npm dist-tag ls "$name"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
