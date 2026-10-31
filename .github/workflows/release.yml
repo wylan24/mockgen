@@ -36,8 +36,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          registry-url: https://registry.npmjs.org
-      # Trusted publishing needs npm 11.5.1 or later.
+      # No registry-url: setup-node would then write a placeholder token to .npmrc,
+      # and npm would send it instead of using trusted publishing (needs npm 11.5.1+).
       - run: npm install -g npm@^11.5.1
       - name: Point the dist-tag at the version
         # Inputs go through env, never straight into the script.
@@ -62,8 +62,8 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          registry-url: https://registry.npmjs.org
-      # Trusted publishing needs npm 11.5.1 or later.
+      # No registry-url: setup-node would then write a placeholder token to .npmrc,
+      # and npm would send it instead of using trusted publishing (needs npm 11.5.1+).
       - run: npm install -g npm@^11.5.1
 
       - name: Tag matches package.json
@@ -91,7 +91,7 @@ jobs:
       - name: Publish to npm
         run: |
           if [[ "$GITHUB_REF_NAME" == *-* ]]; then tag=next; else tag=latest; fi
-          npm publish --provenance --access public --tag "$tag"
+          npm publish --provenance --access public --tag "$tag" --loglevel verbose
 
       # Until there is a stable release, `latest` is itself a pre-release; keep it on
       # the newest one so `npx @wylan24/mockgen` gets current features.
