@@ -157,6 +157,7 @@ export function respond(model: MockModel, input: RespondInput): MockResult {
       body,
       total: input.records ?? 50,
       idKey: detailRoute?.paramNames.at(-1),
+      detailSchema: linked ? detailResponse.schema : undefined,
       detail: linked
         ? (id) => {
             const r = respond(model, { method: 'GET', path: `${requestPath}/${encodeURIComponent(String(id))}`, seed: input.seed });

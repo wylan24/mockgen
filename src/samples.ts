@@ -106,7 +106,8 @@ async function listJsonFiles(dir: string): Promise<string[]> {
 /** Serialize any model as an OpenAPI 3.1 document, so sample users can graduate to a spec. */
 export function toOpenApi(model: MockModel): Record<string, unknown> {
   const paths: Record<string, Record<string, unknown>> = {};
-  for (const route of [...model.routes].sort((a, b) => a.path.localeCompare(b.path))) {
+  // Plain code-unit order: localeCompare depends on the machine's ICU data.
+  for (const route of [...model.routes].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0))) {
     const item = (paths[route.path] ??= {});
     if (route.paramNames.length && !item.parameters) {
       item.parameters = route.paramNames.map((name) => ({ name, in: 'path', required: true, schema: { type: 'string' } }));

@@ -44,8 +44,30 @@ const UPPER_BOUNDS = new Set(['maximum', 'maxLength', 'maxItems', 'maxProperties
  * optional properties from other members are dropped (that's what a validator
  * enforces). Required ones are kept: such a spec can't be satisfied anyway, and
  * a realistic value beats a placeholder.
+ *
+ * Schemas are never mutated, so results are cached by identity: generation merges
+ * the same schemas for every record.
  */
 export function mergeAllOf(schema: Schema): Schema {
+  let merged = mergeCache.get(schema);
+  if (!merged) mergeCache.set(schema, (merged = mergeUncached(schema)));
+  return merged;
+}
+
+const mergeCache = new WeakMap<Schema, Schema>();
+
+/** `mergeAllOf({allOf: [base, branch]})`, cached per (base, branch) pair. */
+export function mergeBranch(base: Schema, branch: Schema): Schema {
+  let byBranch = branchCache.get(base);
+  if (!byBranch) branchCache.set(base, (byBranch = new WeakMap()));
+  let merged = byBranch.get(branch);
+  if (!merged) byBranch.set(branch, (merged = mergeUncached({ allOf: [base, branch] })));
+  return merged;
+}
+
+const branchCache = new WeakMap<Schema, WeakMap<Schema, Schema>>();
+
+function mergeUncached(schema: Schema): Schema {
   const { allOf, ...rest } = schema;
   const merged: Schema = { ...rest };
   const closed: Set<string>[] = [];
@@ -173,13 +195,7 @@ function checkString(v: string, s: Schema): boolean {
   const length = [...v].length;
   if (s.minLength !== undefined && length < s.minLength) return false;
   if (s.maxLength !== undefined && length > s.maxLength) return false;
-  if (s.pattern) {
-    try {
-      if (!new RegExp(s.pattern, 'u').test(v)) return false;
-    } catch {
-      return false;
-    }
-  }
+  if (s.pattern && !safeTest(s.pattern, v)) return false;
   const format = s.format && FORMATS[s.format];
   return !format || format(v);
 }
@@ -217,13 +233,21 @@ function checkObject(v: Record<string, unknown>, s: Schema, d: number): boolean 
   return true;
 }
 
+/** Test against a spec pattern, compiled once; an invalid pattern matches nothing. */
 function safeTest(pattern: string, value: string): boolean {
-  try {
-    return new RegExp(pattern, 'u').test(value);
-  } catch {
-    return false;
+  let re = regexCache.get(pattern);
+  if (re === undefined) {
+    try {
+      re = new RegExp(pattern, 'u');
+    } catch {
+      re = null;
+    }
+    regexCache.set(pattern, re);
   }
+  return re !== null && re.test(value);
 }
+
+const regexCache = new Map<string, RegExp | null>();
 
 function equal(a: unknown, b: unknown): boolean {
   return a === b || JSON.stringify(a) === JSON.stringify(b);

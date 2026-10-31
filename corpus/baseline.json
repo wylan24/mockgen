@@ -7,7 +7,7 @@
       "note": "oneOf lists the same schema object several times (included[] on appCategories/appInfos), and errors[].source is a oneOf of two all-optional objects; no value matches exactly one branch"
     },
     "codat-accounting": {
-      "invalid": 20,
+      "invalid": 19,
       "cause": "spec",
       "note": "allOf: [{type: string}, {type: null}] for nullable fields (e.g. currency) is unsatisfiable"
     },
@@ -32,7 +32,7 @@
       "note": "wrappers set additionalProperties: false next to allOf, so they forbid every property (including required ones); carrier settings oneOf branches each accept only {}; created_at is both date-time and an se-id pattern"
     },
     "vercel": {
-      "invalid": 37,
+      "invalid": 36,
       "cause": "spec",
       "note": "fields declared {type: \"null\", oneOf: [string, number]} (a broken 3.0 nullable conversion) are unsatisfiable"
     },

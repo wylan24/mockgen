@@ -1,0 +1,64 @@
+name: Release
+
+# Push a tag like v0.1.0-alpha.1 or v1.0.0 to publish that version to npm with
+# provenance and create a GitHub release. The tag must match package.json.
+#
+# One-time setup: add an npm automation token as the NPM_TOKEN repository secret,
+# or configure this workflow as a trusted publisher on npmjs.com (then the token
+# isn't needed after the first publish).
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write # create the GitHub release
+  id-token: write # npm provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - name: Tag matches package.json
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match package.json version $version"
+            exit 1
+          fi
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run smoke
+
+      - uses: actions/cache@v4
+        with:
+          path: corpus/.cache
+          key: corpus-${{ hashFiles('corpus/specs.json') }}
+      - run: npm run corpus:fetch
+      - run: npm run corpus -- --strict
+
+      # Pre-releases (0.1.0-alpha.1) go to the `next` dist-tag so `npx` keeps
+      # resolving the latest stable version.
+      - name: Publish to npm
+        run: |
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then tag=next; else tag=latest; fi
+          npm publish --provenance --access public --tag "$tag"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: GitHub release
+        run: |
+          flags=(--generate-notes --verify-tag)
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then flags+=(--prerelease); fi
+          gh release create "$GITHUB_REF_NAME" "${flags[@]}"
+        env:
+          GH_TOKEN: ${{ github.token }}

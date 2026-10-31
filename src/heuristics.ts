@@ -81,9 +81,22 @@ const STRING_RULES: StringRule[] = [
 /** A realistic string for this property name, or undefined when no rule applies. */
 export function stringByName(f: Faker, name: string, rec: RecordContext, schema: Schema): string | undefined {
   if (isIdName(name)) return f.string.uuid();
-  const n = normalizeName(name);
-  for (const [re, gen] of STRING_RULES) if (re.test(n)) return gen(f, rec, schema);
-  return undefined;
+  const rule = ruleFor(name);
+  return rule ? rule(f, rec, schema) : undefined;
+}
+
+// Field names repeat endlessly (every record has an `email`), so remember which
+// rule each name hits instead of running ~40 regexes per string.
+const ruleCache = new Map<string, StringRule[1] | null>();
+
+function ruleFor(name: string): StringRule[1] | null {
+  let rule = ruleCache.get(name);
+  if (rule === undefined) {
+    const n = normalizeName(name);
+    rule = STRING_RULES.find(([re]) => re.test(n))?.[1] ?? null;
+    ruleCache.set(name, rule);
+  }
+  return rule;
 }
 
 /** Whether a string property name implies a timestamp when the schema gives no `format`. */

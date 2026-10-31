@@ -21,6 +21,8 @@ import { ResponseValidator } from '../src/validate.js';
 import { cachePath, readManifest } from './corpus-fetch.js';
 
 const LOAD_TARGET = 0.95;
+/** The plan's "p95 response under 20 ms locally", per spec, over every GET route as served. */
+const LATENCY_TARGET_MS = 20;
 const MAX_FAILURES_SHOWN = 8;
 
 interface SpecResult {
@@ -35,6 +37,8 @@ interface SpecResult {
   /** Schemas Ajv can't compile (e.g. non-JavaScript regex syntax); not counted either way. */
   uncheckable: number;
   failures: string[];
+  /** p95 time to build and serialize each GET route's default response. */
+  servedP95?: number;
 }
 
 const { values, positionals } = parseArgs({
@@ -115,13 +119,26 @@ for (const spec of specs) {
     if (res?.schema && !res.hasExample && served.body !== undefined) check(`${route.method} ${concrete}?page=2 (served)`, res.schema, () => served.body);
   }
 
+  // Latency: what a frontend's first requests cost (page 1, default limit), twice per route.
+  const served: number[] = [];
+  for (const route of model.routes.filter((r) => r.method === 'GET')) {
+    const path = route.path.replace(/\{[^}]+\}/g, '1');
+    for (let i = 0; i < 2; i++) {
+      const t = performance.now();
+      JSON.stringify(respond(model, { method: 'GET', path, seed: 1, origin: 'http://localhost' }).body);
+      served.push(performance.now() - t);
+    }
+  }
+  served.sort((a, b) => a - b);
+  result.servedP95 = served.length ? served[Math.floor(served.length * 0.95)]! : 0;
+
   peakRss = Math.max(peakRss, process.memoryUsage().rss);
   report(result);
 }
 
 function report(r: SpecResult) {
   const status = !r.loaded ? '✖ load' : r.invalid ? '✖' : '✔';
-  const detail = !r.loaded ? r.error : `${r.routes} routes, ${r.checked - r.invalid}/${r.checked} valid${r.uncheckable ? `, ${r.uncheckable} uncheckable` : ''}, load ${r.loadMs}ms`;
+  const detail = !r.loaded ? r.error : `${r.routes} routes, ${r.checked - r.invalid}/${r.checked} valid${r.uncheckable ? `, ${r.uncheckable} uncheckable` : ''}, load ${r.loadMs}ms, p95 ${r.servedP95?.toFixed(1)}ms${(r.servedP95 ?? 0) > LATENCY_TARGET_MS ? ' (slow)' : ''}`;
   console.log(`${status.padEnd(7)} ${r.name.padEnd(28)} ${String(r.sizeKb).padStart(6)} KB  ${detail}`);
   for (const f of r.failures) console.log(`          ${f.slice(0, 300)}`);
 }
@@ -141,13 +158,16 @@ const regressions = results
 const improved = results.filter((r) => r.loaded && r.invalid < (baseline[r.name]?.invalid ?? 0)).map((r) => r.name);
 const specBugs = results.reduce((n, r) => n + (baseline[r.name]?.cause === 'spec' ? Math.min(r.invalid, baseline[r.name]!.invalid) : 0), 0);
 const ours = results.filter((r) => r.invalid > 0 && baseline[r.name]?.cause !== 'spec');
-const passed = loadRate >= LOAD_TARGET && regressions.length === 0 && (!values.strict || ours.length === 0);
+const slow = results.filter((r) => (r.servedP95 ?? 0) > LATENCY_TARGET_MS);
+const worst = results.reduce<SpecResult | undefined>((w, r) => ((r.servedP95 ?? 0) > (w?.servedP95 ?? -1) ? r : w), undefined);
+const passed = loadRate >= LOAD_TARGET && regressions.length === 0 && (!values.strict || (ours.length === 0 && slow.length === 0));
 
 const summary = [
   `Specs loaded: ${loaded}/${results.length} (${(loadRate * 100).toFixed(1)}%, target ${LOAD_TARGET * 100}%)`,
   `Responses valid: ${checked - invalid}/${checked} (${checked ? (((checked - invalid) / checked) * 100).toFixed(2) : 100}%, target 100%)${uncheckable ? `; ${uncheckable} uncheckable` : ''}`,
   `Valid excluding known spec bugs: ${checked - invalid}/${checked - specBugs} (${(((checked - invalid) / Math.max(1, checked - specBugs)) * 100).toFixed(2)}%); mockgen failures in ${ours.length} specs${ours.length ? ` (${ours.map((r) => r.name).join(', ')})` : ''}`,
   `Generation p95: ${p95.toFixed(2)}ms per response`,
+  `Served p95: worst ${worst?.servedP95?.toFixed(1)}ms (${worst?.name}), target ${LATENCY_TARGET_MS}ms per spec${slow.length ? `; over target: ${slow.map((r) => r.name).join(', ')}` : ''}`,
   `Peak RSS: ${Math.round(peakRss / 1024 / 1024)} MB`,
 ];
 console.log(`\n${summary.join('\n')}`);
@@ -162,7 +182,7 @@ if (values['update-baseline']) {
   }
   // Keep entries for specs not in this run (e.g. a filtered run).
   for (const [name, entry] of Object.entries(baseline)) if (!results.some((r) => r.name === name)) next[name] = entry;
-  const sorted = Object.fromEntries(Object.entries(next).sort(([a], [b]) => a.localeCompare(b)));
+  const sorted = Object.fromEntries(Object.entries(next).sort(([a], [b]) => (a < b ? -1 : 1)));
   await fs.writeFile(BASELINE_FILE, `${JSON.stringify({ $comment: 'Known invalid responses per spec. See scripts/corpus.ts.', specs: sorted }, null, 2)}\n`);
   console.log(`Wrote ${path.relative(process.cwd(), BASELINE_FILE)}`);
 }

@@ -1,7 +1,7 @@
 import { Faker, base, en } from '@faker-js/faker';
 import RandExp from 'randexp';
 import type { Schema } from './model.js';
-import { countMatches, type Discriminator, discriminatorOf, fits, mergeAllOf, typeOf } from './schema.js';
+import { countMatches, type Discriminator, discriminatorOf, fits, mergeAllOf, mergeBranch, typeOf } from './schema.js';
 import { looksLikeDate, looksLikeDateTime, numberByName, stringByName, type RecordContext } from './heuristics.js';
 
 export interface GenerateOptions {
@@ -22,8 +22,10 @@ faker.setDefaultRefDate(REF_DATE);
 // Filling every optional field of every nested object explodes on big specs (Stripe
 // objects nest dozens of expandable objects). Past this depth, or once this many
 // values have been generated, only required fields and minItems are filled.
+// 250 keeps a Stripe list page of 10 full records near 15 ms (the target is 20 ms
+// p95) while every top-level field of a record is still present.
 const RICH_DEPTH = 3;
-const VALUE_BUDGET = 2000;
+const VALUE_BUDGET = 250;
 
 interface Ctx {
   depth: number;
@@ -80,6 +82,13 @@ function gen(schema: Schema, ctx: Ctx): unknown {
   }
 }
 
+/**
+ * Optional fields real APIs only fill when the client asks (HAL's `_embedded` via
+ * `?expand=`). Generating them makes every record several times larger than the real
+ * thing. Required ones are still filled.
+ */
+const ON_REQUEST = new Set(['_embedded']);
+
 function lean(ctx: Ctx): boolean {
   return ctx.minimal === true || ctx.depth > RICH_DEPTH || ctx.budget.values <= 0;
 }
@@ -90,17 +99,21 @@ function lean(ctx: Ctx): boolean {
  * checked: it must satisfy its branch, and for `oneOf` no other branch.
  */
 function genChoice(schema: Schema, choices: Schema[], exclusive: boolean, ctx: Ctx): unknown {
-  const { oneOf, anyOf, discriminator, ...rest } = schema;
+  const rest = choiceBase(schema);
   const disc = discriminatorOf(schema);
   if (disc) return genDiscriminated(rest, disc, ctx);
   // Deep in the tree, prefer the cheapest branch (`string` over an expanded object).
   const order = lean(ctx) ? [...choices].sort((a, b) => cost(a) - cost(b)) : faker.helpers.shuffle([...choices]);
   let fallback: unknown;
+  // A rejected candidate must not eat the budget of the next one, or later
+  // candidates come out bare and match every branch.
+  const budget = ctx.budget.values;
   // Second pass: a full object often satisfies a loose sibling branch too, while
   // the bare required fields of the same branch don't.
   for (const attempt of [ctx, { ...ctx, minimal: true }]) {
     for (const branch of order.slice(0, 4)) {
-      const s = Object.keys(rest).length ? mergeAllOf({ allOf: [rest, branch] }) : branch;
+      const s = Object.keys(rest).length ? mergeBranch(rest, branch) : branch;
+      ctx.budget.values = budget;
       const value = gen(s, attempt);
       if (fallback === undefined) fallback = value;
       if (!fits(value, s)) continue;
@@ -115,7 +128,7 @@ function genChoice(schema: Schema, choices: Schema[], exclusive: boolean, ctx: C
 /** With a discriminator the branch is chosen by value, and the record carries that value. */
 function genDiscriminated(rest: Schema, disc: Discriminator, ctx: Ctx): unknown {
   const shared = Object.keys(rest).length > 0;
-  const branchOf = (m: Discriminator['mapping'][number]) => (shared ? mergeAllOf({ allOf: [rest, m.schema] }) : m.schema);
+  const branchOf = (m: Discriminator['mapping'][number]) => (shared ? mergeBranch(rest, m.schema) : m.schema);
   // Skip mapping values the branch's own property schema rejects (a spec bug, but common).
   const usable = disc.mapping.filter((m) => {
     const s = branchOf(m);
@@ -126,6 +139,26 @@ function genDiscriminated(rest: Schema, disc: Discriminator, ctx: Ctx): unknown 
   const value = gen(branchOf(entry), ctx);
   if (value && typeof value === 'object' && !Array.isArray(value)) (value as Record<string, unknown>)[disc.property] = entry.value;
   return value;
+}
+
+// Per-schema derived data, cached by identity: schemas never change, records repeat.
+const baseCache = new WeakMap<Schema, Schema>();
+const siblingCache = new WeakMap<Record<string, Schema>, Set<string>>();
+
+/** A oneOf/anyOf schema minus its alternatives: what every branch is merged with. */
+function choiceBase(schema: Schema): Schema {
+  let base = baseCache.get(schema);
+  if (!base) {
+    const { oneOf, anyOf, discriminator, ...rest } = schema;
+    baseCache.set(schema, (base = rest));
+  }
+  return base;
+}
+
+function siblingsOf(props: Record<string, Schema>): Set<string> {
+  let set = siblingCache.get(props);
+  if (!set) siblingCache.set(props, (set = new Set(Object.keys(props).map((k) => k.toLowerCase()))));
+  return set;
 }
 
 function cost(s: Schema): number {
@@ -143,10 +176,10 @@ function genObject(schema: Schema, ctx: Ctx): Record<string, unknown> {
 
   const props: Record<string, Schema> = schema.properties ?? {};
   const required = new Set<string>(schema.required ?? []);
-  const record: RecordContext = { siblings: new Set(Object.keys(props).map((k) => k.toLowerCase())), owner: ctx.name };
+  const record: RecordContext = { siblings: siblingsOf(props), owner: ctx.name };
   for (const [name, propSchema] of Object.entries(props)) {
     if (propSchema.writeOnly) continue;
-    if (!required.has(name) && lean(ctx)) continue;
+    if (!required.has(name) && (lean(ctx) || ON_REQUEST.has(name))) continue;
     ctx.budget.values--;
     out[name] = gen(propSchema, { ...ctx, depth: ctx.depth + 1, name, record });
   }
@@ -169,7 +202,8 @@ function genObject(schema: Schema, ctx: Ctx): Record<string, unknown> {
 function genArray(schema: Schema, ctx: Ctx): unknown[] {
   const min = schema.minItems ?? 0;
   if (ctx.depth >= ctx.maxDepth) return [];
-  const max = Math.max(min, schema.maxItems ?? Math.max(min, 5));
+  // Nested arrays multiply (a list of invoices of line items of taxes): keep inner ones short.
+  const max = Math.max(min, schema.maxItems ?? Math.max(min, ctx.depth > 1 ? 3 : 5));
   const count = lean(ctx) ? min : faker.number.int({ min: Math.max(min, Math.min(2, max)), max });
   const items: Schema = schema.items ?? {};
   // Items of a `users` array are users, so keep the singular name as the hint.
@@ -224,7 +258,8 @@ function genNumber(schema: Schema, ctx: Ctx, integer: boolean): number {
 function genString(schema: Schema, ctx: Ctx): string {
   const rec = ctx.record ?? { siblings: new Set<string>() };
   // `avatarUrl: {format: uri}` should still be an avatar, and `email` should match `firstName`.
-  let value = (ctx.name ? namedFormat(schema.format, stringByName(faker, ctx.name, rec, schema)) : undefined) ?? byFormat(schema.format) ?? byPattern(schema.pattern);
+  const named = ctx.name && NAMED_FORMATS.has(schema.format) ? namedFormat(schema.format, stringByName(faker, ctx.name, rec, schema)) : undefined;
+  let value = named ?? byFormat(schema.format) ?? byPattern(schema.pattern);
   if (value === undefined && ctx.name) {
     if (looksLikeDate(ctx.name)) value = isoDate(faker.date.birthdate());
     else if (looksLikeDateTime(ctx.name)) value = faker.date.past({ years: 2 }).toISOString();
@@ -239,6 +274,9 @@ function genString(schema: Schema, ctx: Ctx): string {
   if (value.length > max) value = value.slice(0, max);
   return value;
 }
+
+/** Formats where a name-based value (an avatar URL, a matching email) beats a generic one. */
+const NAMED_FORMATS = new Set(['email', 'idn-email', 'uri', 'url', 'iri']);
 
 /** Keep a name-based value when it also satisfies the generic format. */
 function namedFormat(format: string | undefined, candidate: string | undefined): string | undefined {
@@ -299,22 +337,36 @@ function byFormat(format: string | undefined): string | undefined {
 
 function byPattern(pattern: string | undefined): string | undefined {
   if (!pattern) return undefined;
-  try {
-    const re = new RegExp(pattern, 'u');
-    const gen = new RandExp(pattern);
-    gen.max = 5; // Cap `*` and `+` so values stay short.
-    gen.randInt = (min, max) => faker.number.int({ min, max });
-    // Keep generated characters printable ASCII unless the pattern says otherwise.
-    gen.defaultRange.subtract(0, 31);
-    gen.defaultRange.subtract(127, 65535);
-    for (let i = 0; i < 10; i++) {
-      const candidate = gen.gen();
-      if (re.test(candidate)) return candidate;
-    }
-  } catch {
-    // Unsupported regex features fall through to a plain string.
+  const compiled = patternGenerator(pattern);
+  if (!compiled) return undefined;
+  for (let i = 0; i < 10; i++) {
+    const candidate = compiled.gen.gen();
+    if (compiled.re.test(candidate)) return candidate;
   }
   return undefined;
+}
+
+// Compiling a RandExp per value dominated pattern-heavy specs; compile once per pattern.
+// Its randomness comes from the shared, reseeded faker, so reuse stays deterministic.
+const patternCache = new Map<string, { re: RegExp; gen: RandExp } | null>();
+
+function patternGenerator(pattern: string): { re: RegExp; gen: RandExp } | null {
+  let compiled = patternCache.get(pattern);
+  if (compiled === undefined) {
+    try {
+      const gen = new RandExp(pattern);
+      gen.max = 5; // Cap `*` and `+` so values stay short.
+      gen.randInt = (min, max) => faker.number.int({ min, max });
+      // Keep generated characters printable ASCII unless the pattern says otherwise.
+      gen.defaultRange.subtract(0, 31);
+      gen.defaultRange.subtract(127, 65535);
+      compiled = { re: new RegExp(pattern, 'u'), gen };
+    } catch {
+      compiled = null; // Unsupported regex features fall through to a plain string.
+    }
+    patternCache.set(pattern, compiled);
+  }
+  return compiled;
 }
 
 function isoDate(d: Date): string {

@@ -121,6 +121,8 @@ npm run corpus:explain -- linode "GET /linode/instances" 200   # why a response 
 
 Validation follows OpenAPI semantics: 3.0 `nullable`, boolean exclusive bounds, `writeOnly` fields absent from responses, and `discriminator` choosing the `oneOf` branch.
 
+Every spec's GET routes must also serve in under 20 ms at p95.
+
 Some real specs contain schemas no value can satisfy (the same schema twice in a `oneOf`, `allOf: [string, null]`, contradictory enums). [corpus/baseline.json](corpus/baseline.json) lists each one with the reason. CI runs `npm run corpus -- --strict`, which fails if any spec gets worse than its baseline or any failure isn't a documented spec bug.
 
 ## Development
@@ -131,7 +133,20 @@ Requires Node 22.19+.
 npm install
 npm test
 npm run serve:example     # builds, then serves examples/petstore.yaml
+npm run smoke             # pack, install into an empty project, run the CLI and library
 ```
+
+Snapshot tests in [test/snapshot.test.ts](test/snapshot.test.ts) pin generated output byte for byte, and CI runs them on macOS, Linux and Windows. If you change generation on purpose, review the diff and update with `npx vitest run -u`.
+
+### Releasing
+
+Bump `version` in `package.json`, commit, then push a matching tag:
+
+```bash
+git tag v0.1.0-alpha.1 && git push origin v0.1.0-alpha.1
+```
+
+The [release workflow](.github/workflows/release.yml) reruns the tests, smoke test and strict corpus gate, publishes to npm with provenance (pre-releases under the `next` dist-tag), and creates the GitHub release. It needs an `NPM_TOKEN` repository secret, or the workflow set up as a trusted publisher on npmjs.com.
 
 ## License
 

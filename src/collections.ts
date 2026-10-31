@@ -87,6 +87,8 @@ export interface BuildPageInput {
   idKey?: string;
   /** Detail response for an id, used to make list items agree with `GET /x/{id}`. */
   detail?: (id: unknown) => Record<string, unknown> | undefined;
+  /** The detail route's schema; fields it shares with the item need no re-check. */
+  detailSchema?: Schema;
 }
 
 export function buildPage(input: BuildPageInput): { body: unknown; headers: Record<string, string> } {
@@ -97,22 +99,35 @@ export function buildPage(input: BuildPageInput): { body: unknown; headers: Reco
   const idKey = input.idKey && input.idKey in props ? input.idKey : 'id' in props ? 'id' : undefined;
 
   const items: unknown[] = [];
+  const required = new Set<string>(item.required ?? []);
+  const projectable = !item.oneOf && !item.anyOf && !!item.properties;
+  const detailProps: Record<string, Schema> = (input.detailSchema?.allOf ? mergeAllOf(input.detailSchema) : input.detailSchema)?.properties ?? {};
   for (let i = win.offset; i < Math.min(total, win.offset + win.limit); i++) {
-    const record = generate(shape.itemSchema, { seed: input.seed, key: `${input.requestPath}#${i}` }) as Record<string, unknown>;
-    if (idKey) {
-      const idSchema = props[idKey]!;
-      const t = typeOf(idSchema);
-      if (t === 'integer' || t === 'number') {
-        const start = Math.max(1, Math.ceil(idSchema.minimum ?? 1));
-        if (idSchema.maximum === undefined || start + i <= idSchema.maximum) record[idKey] = start + i;
-      }
-      const detail = input.detail?.(record[idKey]);
-      if (detail) {
-        for (const key of Object.keys(record)) {
-          if (key in detail && fits(detail[key], props[key])) record[key] = structuredClone(detail[key]);
-        }
-      }
+    const key = `${input.requestPath}#${i}`;
+    const id = idKey ? recordId(props[idKey]!, i, input.seed, key) : undefined;
+    const detail = id !== undefined ? input.detail?.(id) : undefined;
+    if (detail && !projectable) {
+      // Items that are a oneOf/anyOf can't be projected field by field: generate, then overlay.
+      const record = generate(shape.itemSchema, { seed: input.seed, key }) as Record<string, unknown>;
+      for (const prop of Object.keys(record)) if (prop in detail && fits(detail[prop], props[prop])) record[prop] = detail[prop];
+      items.push(record);
+      continue;
     }
+    if (!detail) {
+      const record = generate(shape.itemSchema, { seed: input.seed, key }) as Record<string, unknown>;
+      if (idKey && id !== undefined && fits(id, props[idKey])) record[idKey] = id;
+      items.push(record);
+      continue;
+    }
+    // The detail record is the source of truth: project it onto the item's fields
+    // rather than generating the item too (twice the work, on the hottest path).
+    const record: Record<string, unknown> = {};
+    for (const [prop, propSchema] of Object.entries(props)) {
+      if (prop in detail && (detailProps[prop] === propSchema || fits(detail[prop], propSchema))) record[prop] = detail[prop];
+      else if (required.has(prop)) record[prop] = generate(propSchema, { seed: input.seed, key: `${key}.${prop}` });
+    }
+    // Required keys without a property schema still have to be there.
+    for (const prop of required) if (!(prop in record)) record[prop] = prop in detail ? detail[prop] : generate({}, { seed: input.seed, key: `${key}.${prop}` });
     items.push(record);
   }
 
@@ -172,6 +187,16 @@ function fillMeta(obj: Record<string, unknown>, schema: Schema | undefined, m: M
       fillMeta(value as Record<string, unknown>, s && (s.allOf ? mergeAllOf(s) : s), m, undefined, depth + 1);
     }
   }
+}
+
+/** Record i's id: sequential for numeric ids, otherwise generated from the id schema alone. */
+function recordId(idSchema: Schema, i: number, seed: number | undefined, key: string): unknown {
+  const t = typeOf(idSchema);
+  if (t === 'integer' || t === 'number') {
+    const id = Math.max(1, Math.ceil(idSchema.minimum ?? 1)) + i;
+    if (idSchema.maximum === undefined || id <= idSchema.maximum) return id;
+  }
+  return generate(idSchema, { seed, key: `${key}.id` });
 }
 
 function navLinks(input: BuildPageInput, win: PageWindow, hasMore: boolean): MetaInfo['links'] {

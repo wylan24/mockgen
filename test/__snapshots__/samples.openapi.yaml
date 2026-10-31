@@ -1,0 +1,172 @@
+openapi: 3.1.0
+info:
+  title: samples
+  version: 0.0.0
+paths:
+  /users:
+    get:
+      responses:
+        "200":
+          description: Inferred from samples
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      minimum: 0
+                    name:
+                      type: string
+                    email:
+                      type: string
+                      format: email
+                    role:
+                      type: string
+                      enum:
+                        - admin
+                        - member
+                        - viewer
+                    avatarUrl:
+                      type: string
+                      format: uri
+                    createdAt:
+                      type: string
+                      format: date-time
+                    bio:
+                      type:
+                        - string
+                        - "null"
+                    team:
+                      type:
+                        - object
+                        - "null"
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        name:
+                          type: string
+                      required:
+                        - id
+                        - name
+                  required:
+                    - id
+                    - name
+                    - email
+                    - role
+                    - avatarUrl
+                    - createdAt
+                    - team
+    post:
+      responses:
+        "201":
+          description: Inferred from samples
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    minimum: 0
+                  name:
+                    type: string
+                  email:
+                    type: string
+                    format: email
+                  role:
+                    type: string
+                  createdAt:
+                    type: string
+                    format: date-time
+                required:
+                  - id
+                  - name
+                  - email
+                  - role
+                  - createdAt
+  /users/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    delete:
+      responses:
+        "204":
+          description: Inferred from samples
+    get:
+      responses:
+        "200":
+          description: Inferred from samples
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    minimum: 0
+                  name:
+                    type: string
+                  email:
+                    type: string
+                    format: email
+                  role:
+                    type: string
+                  avatarUrl:
+                    type: string
+                    format: uri
+                  createdAt:
+                    type: string
+                    format: date-time
+                  bio:
+                    type:
+                      - string
+                      - "null"
+                  lastLoginAt:
+                    type: string
+                    format: date-time
+                  stats:
+                    type: object
+                    properties:
+                      posts:
+                        type: integer
+                        minimum: 0
+                      followers:
+                        type: integer
+                        minimum: 0
+                      rating:
+                        type: number
+                        minimum: 0
+                    required:
+                      - posts
+                      - followers
+                      - rating
+                required:
+                  - id
+                  - name
+                  - email
+                  - role
+                  - avatarUrl
+                  - createdAt
+                  - bio
+                  - stats
+        "404":
+          description: Inferred from samples
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+                required:
+                  - error
+                  - message

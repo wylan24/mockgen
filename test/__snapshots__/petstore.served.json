@@ -1,0 +1,1176 @@
+{
+  "GET /users 200 seed=1": {
+    "body": {
+      "data": [
+        {
+          "id": 1,
+          "firstName": "Marc",
+          "lastName": "Green",
+          "username": "Marc.Green70",
+          "email": "marc.green94@hotmail.com",
+          "avatarUrl": "https://cdn.jsdelivr.net/gh/faker-js/assets-person-portrait/male/512/84.jpg",
+          "role": "viewer",
+          "bio": "Praesentium verus ullam convoco ad coaegresco claudeo. Uter argumentum aveho.",
+          "createdAt": "2025-05-07T21:58:33.187Z",
+          "address": {
+            "street": "619 Idella View",
+            "city": "Lorenzworth",
+            "zip": "06146-6239",
+            "country": "Spain"
+          }
+        },
+        {
+          "id": 2,
+          "firstName": "Jamaal",
+          "lastName": "Ledner",
+          "username": "Jamaal.Ledner",
+          "email": "jamaal.ledner40@yahoo.com",
+          "avatarUrl": "https://cdn.jsdelivr.net/gh/faker-js/assets-person-portrait/female/512/97.jpg",
+          "role": "admin",
+          "bio": "Fuga campana cruentus architecto aegre vacuus sustineo creptio amiculum cauda. Architecto tenus non terga summa aufero avarus certus confugo.",
+          "createdAt": "2024-11-02T06:30:13.414Z",
+          "address": {
+            "street": "63950 Claudie Common",
+            "city": "Rolandcester",
+            "zip": "89596-4028",
+            "country": "Czechia"
+          }
+        },
+        {
+          "id": 3,
+          "firstName": "Lavina",
+          "lastName": "Prohaska",
+          "username": "Lavina.Prohaska96",
+          "email": "lavina.prohaska8@gmail.com",
+          "avatarUrl": "https://avatars.githubusercontent.com/u/4394840",
+          "role": "member",
+          "bio": "Capio volubilis voluptatibus communis velut unde sumptus succurro auctor. Aptus cornu caput carbo caecus cicuta suppellex inventore. Velociter subseco averto avaritia tui textor crudelis totidem addo turpis.",
+          "createdAt": "2024-06-22T08:17:55.806Z",
+          "address": {
+            "street": "530 Bins Spurs",
+            "city": "West Zechariah",
+            "zip": "46826-2889",
+            "country": "Kuwait"
+          }
+        },
+        {
+          "id": 4,
+          "firstName": "Fausto",
+          "lastName": "Johnston",
+          "username": "Fausto.Johnston57",
+          "email": "fausto.johnston59@gmail.com",
+          "avatarUrl": "https://cdn.jsdelivr.net/gh/faker-js/assets-person-portrait/female/512/30.jpg",
+          "role": "viewer",
+          "bio": "Accusantium commodi vestrum explicabo facilis adhuc demum patior arcus auditor. Cognatus pectus utrimque aestivus odio ex ubi.",
+          "createdAt": "2025-04-26T19:51:04.190Z",
+          "address": {
+            "street": "16012 Murray Lock",
+            "city": "Schillerfurt",
+            "zip": "48036",
+            "country": "British Indian Ocean Territory (Chagos Archipelago)"
+          }
+        },
+        {
+          "id": 5,
+          "firstName": "Gia",
+          "lastName": "Rippin",
+          "username": "Gia_Rippin46",
+          "email": "gia_rippin@hotmail.com",
+          "avatarUrl": "https://avatars.githubusercontent.com/u/97876654",
+          "role": "admin",
+          "bio": "Aestas doloremque astrum corrumpo sunt custodia vilitas. Tactus vinco et suus amplus minus provident antepono.",
+          "createdAt": "2025-07-09T19:20:24.975Z",
+          "address": {
+            "street": "10324 A Street",
+            "city": "Denton",
+            "zip": "68411-6661",
+            "country": "Saint Martin"
+          }
+        },
+        {
+          "id": 6,
+          "firstName": "Ralph",
+          "lastName": "O'Reilly-Adams",
+          "username": "Ralph_OReilly-Adams",
+          "email": "ralph.oreilly-adams84@hotmail.com",
+          "avatarUrl": "https://avatars.githubusercontent.com/u/49533106",
+          "role": "admin",
+          "bio": "Subseco curis thesis stabilis cruentus ex caute. Delectatio viscus quibusdam altus angulus. Titulus eius patria.",
+          "createdAt": "2024-06-12T14:29:17.785Z",
+          "address": {
+            "street": "12471 Crescent Road",
+            "city": "Nadershire",
+            "zip": "29027",
+            "country": "Bermuda"
+          }
+        },
+        {
+          "id": 7,
+          "firstName": "Manuel",
+          "lastName": "Halvorson",
+          "username": "Manuel.Halvorson",
+          "email": "manuel_halvorson@gmail.com",
+          "avatarUrl": "https://cdn.jsdelivr.net/gh/faker-js/assets-person-portrait/female/512/69.jpg",
+          "role": "admin",
+          "bio": "Solum cunae reprehenderit facilis.",
+          "createdAt": "2025-11-04T21:18:35.293Z",
+          "address": {
+            "street": "7309 Bechtelar Forge",
+            "city": "Chynaton",
+            "zip": "14681-0936",
+            "country": "Cyprus"
+          }
+        },
+        {
+          "id": 8,
+          "firstName": "Cruz",
+          "lastName": "Anderson",
+          "username": "Cruz_Anderson89",
+          "email": "cruz_anderson@yahoo.com",
+          "avatarUrl": "https://cdn.jsdelivr.net/gh/faker-js/assets-person-portrait/male/512/72.jpg",
+          "role": "admin",
+          "bio": "Torqueo cornu decet volo arma sursum.",
+          "createdAt": "2024-02-23T21:08:27.817Z",
+          "address": {
+            "street": "22417 Chestnut Street",
+            "city": "New Simeonberg",
+            "zip": "32648",
+            "country": "Russian Federation"
+          }
+        },
+        {
+          "id": 9,
+          "firstName": "Sara",
+          "lastName": "Bartoletti",
+          "username": "Sara.Bartoletti36",
+          "email": "sara.bartoletti@yahoo.com",
+          "avatarUrl": "https://avatars.githubusercontent.com/u/61449508",
+          "role": "member",
+          "bio": "Cibo celebrer aspernatur coepi. Accusantium arbustum tyrannus accedo maiores sollers adhaero corrumpo. Clarus appono tandem admoneo uter peior universe magni sub bis.",
+          "createdAt": "2024-04-26T20:14:50.262Z",
+          "address": {
+            "street": "36680 Rosie Trail",
+            "city": "East Nakiafort",
+            "zip": "98038",
+            "country": "Christmas Island"
+          }
+        },
+        {
+          "id": 10,
+          "firstName": "Everett",
+          "lastName": "Lubowitz",
+          "username": "Everett.Lubowitz74",
+          "email": "everett_lubowitz@gmail.com",
+          "avatarUrl": "https://cdn.jsdelivr.net/gh/faker-js/assets-person-portrait/female/512/44.jpg",
+          "role": "admin",
+          "bio": "Conduco tribuo defetiscor appositus ullus carbo.",
+          "createdAt": "2024-12-27T07:09:23.548Z",
+          "address": {
+            "street": "9837 S Water Street",
+            "city": "South Gate",
+            "zip": "87086-8150",
+            "country": "Ethiopia"
+          }
+        }
+      ],
+      "page": 1,
+      "total": 50
+    },
+    "headers": {
+      "x-total-count": "50",
+      "link": "<http://localhost:4010/users?page=2&limit=10>; rel=\"next\""
+    }
+  },
+  "GET /users 200 seed=2": {
+    "body": {
+      "data": [
+        {
+          "id": 1,
+          "firstName": "Morris",
+          "lastName": "O'Connell",
+          "username": "Morris_OConnell",
+          "email": "morris.oconnell@hotmail.com",
+          "avatarUrl": "https://avatars.githubusercontent.com/u/46437395",
+          "role": "viewer",
+          "bio": "Aer spoliatio aegrotatio aeneus abstergo. Usitas audax qui conculco.",
+          "createdAt": "2025-12-21T06:08:00.126Z",
+          "address": {
+            "street": "382 Frami Avenue",
+            "city": "Carrolltown",
+            "zip": "97290-4861",
+            "country": "Kenya"
+          }
+        },
+        {
+          "id": 2,
+          "firstName": "Carol",
+          "lastName": "Quitzon",
+          "username": "Carol.Quitzon",
+          "email": "carol_quitzon39@gmail.com",
+          "avatarUrl": "https://avatars.githubusercontent.com/u/54750416",
+          "role": "admin",
+          "bio": "Summa corrumpo verus nisi comitatus inflammatio. Bibo aduro tertius thorax torqueo tres veritatis thesis altus illo. Tabesco uredo cur aveho eum vapulus tondeo.",
+          "createdAt": "2025-08-04T19:52:45.759Z",
+          "address": {
+            "street": "1020 Quentin Glens",
+            "city": "Peoria",
+            "zip": "70018-0047",
+            "country": "Jordan"
+          }
+        },
+        {
+          "id": 3,
+          "firstName": "Larry",
+          "lastName": "Goldner",
+          "username": "Larry_Goldner39",
+          "email": "larry_goldner@gmail.com",
+          "avatarUrl": "https://avatars.githubusercontent.com/u/3298008",
+          "role": "admin",
+          "bio": "Audio somniculosus acer.",
+          "createdAt": "2025-01-07T23:23:48.162Z",
+          "address": {
+            "street": "332 Castle Road",
+            "city": "South Maryannton",
+            "zip": "97757-2992",
+            "country": "Serbia"
+          }
+        },
+        {
+          "id": 4,
+          "firstName": "Lucius",
+          "lastName": "Morissette",
+          "username": "Lucius.Morissette",
+          "email": "lucius.morissette51@yahoo.com",
+          "avatarUrl": "https://avatars.githubusercontent.com/u/94940514",
+          "role": "member",
+          "bio": "Curso ascit abscido sponte adipiscor arma. Triumphus sol canonicus debeo coniuratio. Coruscus nobis earum tenetur.",
+          "createdAt": "2025-10-13T00:49:47.198Z",
+          "address": {
+            "street": "3179 Gordon Road",
+            "city": "Jaskolskiport",
+            "zip": "53162",
+            "country": "Vanuatu"
+          }
+        },
+        {
+          "id": 5,
+          "firstName": "Britney",
+          "lastName": "Kuvalis",
+          "username": "Britney.Kuvalis",
+          "email": "britney.kuvalis@hotmail.com",
+          "avatarUrl": "https://avatars.githubusercontent.com/u/68641584",
+          "role": "member",
+          "bio": "Creber error viridis supplanto. Uter aestas patrocinor auctus addo. Decretum demonstro synagoga deprimo uxor theca.",
+          "createdAt": "2024-09-13T01:13:23.644Z",
+          "address": {
+            "street": "467 Ivory Parks",
+            "city": "Cape Coral",
+            "zip": "82308",
+            "country": "Saint Pierre and Miquelon"
+          }
+        },
+        {
+          "id": 6,
+          "firstName": "Maurine",
+          "lastName": "Witting",
+          "username": "Maurine.Witting56",
+          "email": "maurine_witting@gmail.com",
+          "avatarUrl": "https://cdn.jsdelivr.net/gh/faker-js/assets-person-portrait/female/512/44.jpg",
+          "role": "viewer",
+          "bio": "Bene bellum complectus ara arguo.",
+          "createdAt": "2024-04-28T21:05:05.187Z",
+          "address": {
+            "street": "426 Mill Street",
+            "city": "Port Arne",
+            "zip": "11621",
+            "country": "Christmas Island"
+          }
+        },
+        {
+          "id": 7,
+          "firstName": "Alexandre",
+          "lastName": "Ondricka",
+          "username": "Alexandre.Ondricka",
+          "email": "alexandre.ondricka6@hotmail.com",
+          "avatarUrl": "https://avatars.githubusercontent.com/u/50618106",
+          "role": "member",
+          "bio": "Studio itaque valetudo crustulum supplanto atqui. Quae volva reiciendis. Vita cumque suasoria cursus censura anser odit.",
+          "createdAt": "2025-02-10T01:47:28.007Z",
+          "address": {
+            "street": "16603 Schumm Square",
+            "city": "Shanahancester",
+            "zip": "65494",
+            "country": "Tokelau"
+          }
+        },
+        {
+          "id": 8,
+          "firstName": "Margret",
+          "lastName": "Haley",
+          "username": "Margret.Haley52",
+          "email": "margret.haley75@yahoo.com",
+          "avatarUrl": "https://cdn.jsdelivr.net/gh/faker-js/assets-person-portrait/male/512/40.jpg",
+          "role": "member",
+          "bio": "Colo molestiae audeo amissio patrocinor vorago speculum viscus. Tunc confero conforto molestiae.",
+          "createdAt": "2024-07-13T08:02:51.854Z",
+          "address": {
+            "street": "478 Ryan Spring",
+            "city": "Parker",
+            "zip": "89849-8273",
+            "country": "Papua New Guinea"
+          }
+        },
+        {
+          "id": 9,
+          "firstName": "Reynold",
+          "lastName": "Gusikowski",
+          "username": "Reynold.Gusikowski",
+          "email": "reynold.gusikowski@gmail.com",
+          "avatarUrl": "https://cdn.jsdelivr.net/gh/faker-js/assets-person-portrait/female/512/2.jpg",
+          "role": "member",
+          "bio": "At quod tantum subvenio victus subito. Arceo tui in cresco laboriosam apud placeat maiores.",
+          "createdAt": "2025-08-16T15:49:13.422Z",
+          "address": {
+            "street": "32941 Broad Street",
+            "city": "Vacaville",
+            "zip": "18315-8986",
+            "country": "Kenya"
+          }
+        },
+        {
+          "id": 10,
+          "firstName": "Emmett",
+          "lastName": "Bogan",
+          "username": "Emmett_Bogan94",
+          "email": "emmett.bogan27@hotmail.com",
+          "avatarUrl": "https://cdn.jsdelivr.net/gh/faker-js/assets-person-portrait/female/512/93.jpg",
+          "role": "admin",
+          "bio": "Cultura civitas defaeco uredo vitiosus credo cupressus timor. Anser cum adamo vereor uter.",
+          "createdAt": "2025-11-28T10:33:58.868Z",
+          "address": {
+            "street": "559 Murray Divide",
+            "city": "North Manleyville",
+            "zip": "20148",
+            "country": "Chile"
+          }
+        }
+      ],
+      "page": 1,
+      "total": 50
+    },
+    "headers": {
+      "x-total-count": "50",
+      "link": "<http://localhost:4010/users?page=2&limit=10>; rel=\"next\""
+    }
+  },
+  "GET /users?page=3&limit=4 seed=1": {
+    "body": {
+      "data": [
+        {
+          "id": 9,
+          "firstName": "Sara",
+          "lastName": "Bartoletti",
+          "username": "Sara.Bartoletti36",
+          "email": "sara.bartoletti@yahoo.com",
+          "avatarUrl": "https://avatars.githubusercontent.com/u/61449508",
+          "role": "member",
+          "bio": "Cibo celebrer aspernatur coepi. Accusantium arbustum tyrannus accedo maiores sollers adhaero corrumpo. Clarus appono tandem admoneo uter peior universe magni sub bis.",
+          "createdAt": "2024-04-26T20:14:50.262Z",
+          "address": {
+            "street": "36680 Rosie Trail",
+            "city": "East Nakiafort",
+            "zip": "98038",
+            "country": "Christmas Island"
+          }
+        },
+        {
+          "id": 10,
+          "firstName": "Everett",
+          "lastName": "Lubowitz",
+          "username": "Everett.Lubowitz74",
+          "email": "everett_lubowitz@gmail.com",
+          "avatarUrl": "https://cdn.jsdelivr.net/gh/faker-js/assets-person-portrait/female/512/44.jpg",
+          "role": "admin",
+          "bio": "Conduco tribuo defetiscor appositus ullus carbo.",
+          "createdAt": "2024-12-27T07:09:23.548Z",
+          "address": {
+            "street": "9837 S Water Street",
+            "city": "South Gate",
+            "zip": "87086-8150",
+            "country": "Ethiopia"
+          }
+        },
+        {
+          "id": 11,
+          "firstName": "Grover",
+          "lastName": "Schneider",
+          "username": "Grover.Schneider",
+          "email": "grover.schneider56@hotmail.com",
+          "avatarUrl": "https://cdn.jsdelivr.net/gh/faker-js/assets-person-portrait/female/512/70.jpg",
+          "role": "admin",
+          "bio": "Adinventitias vaco capillus absens vix ullam ciminatio arx quas tabesco.",
+          "createdAt": "2024-09-18T16:39:13.337Z",
+          "address": {
+            "street": "24532 O'Hara Walks",
+            "city": "Hicklemouth",
+            "zip": "33951",
+            "country": "Samoa"
+          }
+        },
+        {
+          "id": 12,
+          "firstName": "Danial",
+          "lastName": "Willms",
+          "username": "Danial.Willms",
+          "email": "danial_willms71@yahoo.com",
+          "avatarUrl": "https://avatars.githubusercontent.com/u/96604047",
+          "role": "admin",
+          "bio": "Cubo tenuis sub odit ullus clam bene verbera adversus cursus. Tenax cunabula acerbitas aestas vaco suspendo delicate asporto.",
+          "createdAt": "2024-04-13T08:04:49.262Z",
+          "address": {
+            "street": "34360 Bedford Road",
+            "city": "Lake Forest",
+            "zip": "75839-1944",
+            "country": "Belarus"
+          }
+        }
+      ],
+      "page": 3,
+      "total": 50
+    },
+    "headers": {
+      "x-total-count": "50",
+      "link": "<http://localhost:4010/users?page=4&limit=4>; rel=\"next\", <http://localhost:4010/users?page=2&limit=4>; rel=\"prev\""
+    }
+  },
+  "POST /users 201 seed=1": {
+    "body": {
+      "id": 2169,
+      "firstName": "Narciso",
+      "lastName": "Kirlin",
+      "username": "Narciso.Kirlin",
+      "email": "narciso.kirlin49@hotmail.com",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/49225517",
+      "role": "admin",
+      "bio": "Turbo cum tibi suspendo quos.",
+      "createdAt": "2024-05-26T15:57:00.815Z",
+      "address": {
+        "street": "1286 Senger Crossroad",
+        "city": "New Rey",
+        "zip": "40483-1032",
+        "country": "Madagascar"
+      }
+    },
+    "headers": {}
+  },
+  "POST /users 201 seed=2": {
+    "body": {
+      "id": 297,
+      "firstName": "Estelle",
+      "lastName": "Towne",
+      "username": "Estelle_Towne",
+      "email": "estelle_towne@yahoo.com",
+      "avatarUrl": "https://cdn.jsdelivr.net/gh/faker-js/assets-person-portrait/male/512/20.jpg",
+      "role": "viewer",
+      "bio": "Creta voluptas velociter triduana clam. Conscendo spiritus conservo uxor aliquam atqui summa aveho saepe venustas.",
+      "createdAt": "2025-07-26T02:13:14.749Z",
+      "address": {
+        "street": "51711 Rippin-Ferry Inlet",
+        "city": "Raquelville",
+        "zip": "29001",
+        "country": "Grenada"
+      }
+    },
+    "headers": {}
+  },
+  "POST /users 422 seed=1": {
+    "body": {
+      "code": "not_found",
+      "message": "Defungo comis usque ara conventus solitudo damno facere somnus coadunatio. Spargo voro quam neque. Viriliter cuius assumenda."
+    },
+    "headers": {}
+  },
+  "POST /users 422 seed=2": {
+    "body": {
+      "code": "not_found",
+      "message": "Solum denique dedecor cursus. Curtus voluptates strenuus calco contabesco depono. Spiritus cum tendo terror umerus crustulum beatae anser eveniet."
+    },
+    "headers": {}
+  },
+  "GET /users/me 200 seed=1": {
+    "body": {
+      "id": 8002,
+      "firstName": "Dewitt",
+      "lastName": "Bode",
+      "username": "Dewitt.Bode8",
+      "email": "dewitt.bode56@hotmail.com",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/60378928",
+      "role": "viewer",
+      "bio": "Officia alius aveho.",
+      "createdAt": "2024-10-27T07:58:13.180Z",
+      "address": {
+        "street": "39189 Abshire Park",
+        "city": "Bend",
+        "zip": "39364",
+        "country": "Svalbard & Jan Mayen Islands"
+      }
+    },
+    "headers": {}
+  },
+  "GET /users/me 200 seed=2": {
+    "body": {
+      "id": 522,
+      "firstName": "Augustus",
+      "lastName": "Turcotte",
+      "username": "Augustus.Turcotte",
+      "email": "augustus_turcotte69@yahoo.com",
+      "avatarUrl": "https://cdn.jsdelivr.net/gh/faker-js/assets-person-portrait/female/512/35.jpg",
+      "role": "admin",
+      "bio": "Taedium commodi itaque urbanus adsidue culpo cupiditate soleo maxime odio. Defero trans tepidus inflammatio defungo surgo.",
+      "createdAt": "2025-09-12T04:00:31.726Z",
+      "address": {
+        "street": "3646 S Broadway",
+        "city": "East Princess",
+        "zip": "58953-3720",
+        "country": "Mauritania"
+      }
+    },
+    "headers": {}
+  },
+  "GET /users/me?page=3&limit=4 seed=1": {
+    "body": {
+      "id": 8002,
+      "firstName": "Dewitt",
+      "lastName": "Bode",
+      "username": "Dewitt.Bode8",
+      "email": "dewitt.bode56@hotmail.com",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/60378928",
+      "role": "viewer",
+      "bio": "Officia alius aveho.",
+      "createdAt": "2024-10-27T07:58:13.180Z",
+      "address": {
+        "street": "39189 Abshire Park",
+        "city": "Bend",
+        "zip": "39364",
+        "country": "Svalbard & Jan Mayen Islands"
+      }
+    },
+    "headers": {}
+  },
+  "GET /pets 200 seed=1": {
+    "body": [
+      {
+        "id": 1,
+        "name": "Biscuit",
+        "species": "dog",
+        "price": 989.43,
+        "birthDate": "2024-08-18",
+        "owner": {
+          "id": 3153,
+          "firstName": "Jayce",
+          "lastName": "Hagenes",
+          "username": "Jayce.Hagenes25",
+          "email": "jayce.hagenes@hotmail.com",
+          "avatarUrl": "https://cdn.jsdelivr.net/gh/faker-js/assets-person-portrait/male/512/86.jpg",
+          "role": "member",
+          "bio": "Carcer cultellus annus xiphias cui canonicus officia. Campana vito aggredior minus. Magnam omnis benevolentia.",
+          "createdAt": "2024-12-31T17:30:28.937Z",
+          "address": {
+            "street": "5047 Brannon Avenue",
+            "city": "North Traceboro",
+            "zip": "54600",
+            "country": "Liechtenstein"
+          }
+        },
+        "tags": [
+          "zbwle-yqlm-bdlxll-u",
+          "ws-wp-vabd-tlge-pv",
+          "tx-h-reto-riqvso",
+          "u-h-jowxig-s-xi",
+          "ajnfk-mehf-bsfmxw"
+        ]
+      },
+      {
+        "id": 2,
+        "name": "Biscuit",
+        "species": "dog",
+        "price": 267.9,
+        "birthDate": "2024-10-13",
+        "owner": null,
+        "tags": [
+          "rmnopl-bu-bittu-wqhmwk",
+          "aulq-o-gds-suaf-z-p",
+          "kac-wkv-ohhiwb-hnwe",
+          "mybh-pmsaek-lkdl-pqfmmw"
+        ]
+      },
+      {
+        "id": 3,
+        "name": "Biscuit",
+        "species": "dog",
+        "price": 821.59,
+        "birthDate": "2024-12-20",
+        "owner": null,
+        "tags": [
+          "l-cfqht",
+          "hhy-hhssm-ut-f-liq-yb",
+          "c-gx-knyl"
+        ]
+      },
+      {
+        "id": 4,
+        "name": "Biscuit",
+        "species": "cat",
+        "price": 336.48,
+        "birthDate": "2025-02-16",
+        "owner": null,
+        "tags": [
+          "tzcxon-f-s-vkkhks-ugq",
+          "hjwoy-fmxv-dovkxi-qk-t-l",
+          "egar-o",
+          "vxppy-lzdl-pmbdpz-yqfz"
+        ]
+      },
+      {
+        "id": 5,
+        "name": "Biscuit",
+        "species": "rabbit",
+        "price": 891.4,
+        "birthDate": "2024-09-14",
+        "owner": {
+          "id": 7031,
+          "firstName": "Sedrick",
+          "lastName": "Runolfsson",
+          "username": "Sedrick.Runolfsson",
+          "email": "sedrick.runolfsson@hotmail.com",
+          "avatarUrl": "https://cdn.jsdelivr.net/gh/faker-js/assets-person-portrait/female/512/45.jpg",
+          "role": "admin",
+          "bio": "Tamdiu perferendis demitto.",
+          "createdAt": "2025-02-26T13:09:26.419Z",
+          "address": {
+            "street": "4856 E Broadway Street",
+            "city": "South Lorenfurt",
+            "zip": "83086-8267",
+            "country": "Sao Tome and Principe"
+          }
+        },
+        "tags": [
+          "kfh-gqkllk-oye-jgezg-uk",
+          "xeeel-sxkpjg",
+          "ts-wmogn-rzm-gq-fh-rpc"
+        ]
+      },
+      {
+        "id": 6,
+        "name": "Biscuit",
+        "species": "dog",
+        "price": 975.08,
+        "birthDate": "2024-05-01",
+        "owner": {
+          "id": 8125,
+          "firstName": "Daniella",
+          "lastName": "O'Connell",
+          "username": "Daniella_OConnell",
+          "email": "daniella_oconnell@yahoo.com",
+          "avatarUrl": "https://avatars.githubusercontent.com/u/67414865",
+          "role": "member",
+          "bio": "Suadeo certe adulatio uterque. Suffoco vindico aliquid pecto. Despecto nihil campana dolorum delectus mollitia conitor vivo benigne.",
+          "createdAt": "2025-02-06T06:00:07.833Z",
+          "address": {
+            "street": "65355 Dolores Spring",
+            "city": "Downers Grove",
+            "zip": "34612",
+            "country": "Tajikistan"
+          }
+        },
+        "tags": [
+          "azdg-tjpzr-egg-t-cvr",
+          "grnik-p",
+          "p-yjjk-cp-wquo-djejkj-foll",
+          "lmcao-njj-juem",
+          "lw-zd"
+        ]
+      },
+      {
+        "id": 7,
+        "name": "Biscuit",
+        "species": "dog",
+        "price": 409.63,
+        "birthDate": "2025-08-22",
+        "owner": null,
+        "tags": [
+          "e-dixj-doph-ys-ub-ezyeer",
+          "gg",
+          "f-sti-pl-kjwr",
+          "s",
+          "dap-fxl"
+        ]
+      },
+      {
+        "id": 8,
+        "name": "Biscuit",
+        "species": "dog",
+        "price": 174.79,
+        "birthDate": "2025-08-31",
+        "owner": null,
+        "tags": [
+          "pmyp-f-jo-wbu",
+          "w-tt"
+        ]
+      },
+      {
+        "id": 9,
+        "name": "Biscuit",
+        "species": "rabbit",
+        "price": 96.72,
+        "birthDate": "2024-03-17",
+        "owner": null,
+        "tags": [
+          "jqc-r-u-tlxxxm-nyz-h",
+          "c-s-vtpizq-dm-ch",
+          "iffcs-qkxha-soafwt-bzl-rhrt-mf",
+          "i-ehzznz",
+          "uqbc-rhlzmq-putj"
+        ]
+      },
+      {
+        "id": 10,
+        "name": "Biscuit",
+        "species": "cat",
+        "price": 309.09,
+        "birthDate": "2025-04-04",
+        "owner": {
+          "id": 7750,
+          "firstName": "Maye",
+          "lastName": "Boyle",
+          "username": "Maye.Boyle",
+          "email": "maye.boyle@yahoo.com",
+          "avatarUrl": "https://avatars.githubusercontent.com/u/81721240",
+          "role": "admin",
+          "bio": "Ventus assentator vorago asporto. Talis corrupti curvo victoria tergum vestigium.",
+          "createdAt": "2024-10-05T19:49:49.196Z",
+          "address": {
+            "street": "17390 Watsica-Lubowitz Junctions",
+            "city": "East George",
+            "zip": "78279",
+            "country": "Turkey"
+          }
+        },
+        "tags": [
+          "rn",
+          "tep-looxpx",
+          "pge-yrz-xrpbva-e-zddzdb",
+          "n-urkmr-oz-b-zt",
+          "qam-apq-l-dfqcp-zp"
+        ]
+      }
+    ],
+    "headers": {
+      "x-total-count": "50",
+      "link": "<http://localhost:4010/pets?page=2&limit=10>; rel=\"next\""
+    }
+  },
+  "GET /pets 200 seed=2": {
+    "body": [
+      {
+        "id": 1,
+        "name": "Biscuit",
+        "species": "dog",
+        "price": 169.01,
+        "birthDate": "2024-09-29",
+        "owner": null,
+        "tags": [
+          "bljnl-aolwu-ovi",
+          "m",
+          "bmnar",
+          "i-vobum-gvb-i",
+          "cwj-h-zwhu-gwp-u"
+        ]
+      },
+      {
+        "id": 2,
+        "name": "Biscuit",
+        "species": "rabbit",
+        "price": 671.41,
+        "birthDate": "2024-05-30",
+        "owner": {
+          "id": 6387,
+          "firstName": "Jamison",
+          "lastName": "Parisian",
+          "username": "Jamison.Parisian",
+          "email": "jamison_parisian@gmail.com",
+          "avatarUrl": "https://avatars.githubusercontent.com/u/16959148",
+          "role": "admin",
+          "bio": "Concido patior consequatur voluptas ceno. Totam vereor et decumbo tabesco.",
+          "createdAt": "2025-04-02T19:13:05.857Z",
+          "address": {
+            "street": "2738 Jast Lodge",
+            "city": "Wauwatosa",
+            "zip": "58621",
+            "country": "Bhutan"
+          }
+        },
+        "tags": [
+          "ir-lc",
+          "fyhpem-yghsz-aacpw",
+          "g",
+          "qbi"
+        ]
+      },
+      {
+        "id": 3,
+        "name": "Biscuit",
+        "species": "dog",
+        "price": 974.06,
+        "birthDate": "2024-10-02",
+        "owner": {
+          "id": 1554,
+          "firstName": "Jane",
+          "lastName": "Leffler",
+          "username": "Jane.Leffler58",
+          "email": "jane_leffler31@gmail.com",
+          "avatarUrl": "https://avatars.githubusercontent.com/u/47241033",
+          "role": "member",
+          "bio": "Molestiae deleniti adamo.",
+          "createdAt": "2024-06-19T06:34:19.236Z",
+          "address": {
+            "street": "854 Emerson Corners",
+            "city": "Ricardofurt",
+            "zip": "97079-8174",
+            "country": "Togo"
+          }
+        },
+        "tags": [
+          "vnur-te-fs-nd-gxt",
+          "ao-mpud-qaftoe-fcqftt",
+          "nb"
+        ]
+      },
+      {
+        "id": 4,
+        "name": "Biscuit",
+        "species": "dog",
+        "price": 39.75,
+        "birthDate": "2024-01-04",
+        "owner": null,
+        "tags": [
+          "sx-al-k-g-zpemt",
+          "d-dphj-jmofb",
+          "eymhe-tdlq"
+        ]
+      },
+      {
+        "id": 5,
+        "name": "Biscuit",
+        "species": "rabbit",
+        "price": 486,
+        "birthDate": "2024-11-15",
+        "owner": null,
+        "tags": [
+          "srfr-c-eaaukd-afksdk-cvtnh",
+          "pw-vuzl-yoxkq-zlku",
+          "fup-ggs"
+        ]
+      },
+      {
+        "id": 6,
+        "name": "Biscuit",
+        "species": "cat",
+        "price": 118.12,
+        "birthDate": "2025-09-29",
+        "owner": {
+          "id": 5396,
+          "firstName": "Carmela",
+          "lastName": "Conroy",
+          "username": "Carmela.Conroy26",
+          "email": "carmela.conroy@yahoo.com",
+          "avatarUrl": "https://avatars.githubusercontent.com/u/46812317",
+          "role": "member",
+          "bio": "Tabgo vel ascit cohors admiratio.",
+          "createdAt": "2024-06-22T18:11:16.864Z",
+          "address": {
+            "street": "90301 15th Street",
+            "city": "Abernathy-Heidenreichstad",
+            "zip": "05069-1714",
+            "country": "Poland"
+          }
+        },
+        "tags": [
+          "rpbqqj-ik-opym-dlyj-ocl-yaabmz",
+          "lnssh-g-vpk",
+          "xwj"
+        ]
+      },
+      {
+        "id": 7,
+        "name": "Biscuit",
+        "species": "cat",
+        "price": 769.05,
+        "birthDate": "2024-05-18",
+        "owner": {
+          "id": 8272,
+          "firstName": "Raphael",
+          "lastName": "Lemke",
+          "username": "Raphael_Lemke47",
+          "email": "raphael.lemke45@yahoo.com",
+          "avatarUrl": "https://cdn.jsdelivr.net/gh/faker-js/assets-person-portrait/male/512/2.jpg",
+          "role": "admin",
+          "bio": "In uberrime aurum speculum.",
+          "createdAt": "2025-03-07T05:55:07.713Z",
+          "address": {
+            "street": "170 Bosco Expressway",
+            "city": "New Tessie",
+            "zip": "13190-4379",
+            "country": "Cyprus"
+          }
+        },
+        "tags": [
+          "ayou-qvkkyq",
+          "z-vwt-zugiv-jqdhu-yswh-udf"
+        ]
+      },
+      {
+        "id": 8,
+        "name": "Biscuit",
+        "species": "parrot",
+        "price": 168.6,
+        "birthDate": "2024-02-23",
+        "owner": {
+          "id": 6034,
+          "firstName": "Forest",
+          "lastName": "Mraz",
+          "username": "Forest_Mraz16",
+          "email": "forest.mraz@yahoo.com",
+          "avatarUrl": "https://avatars.githubusercontent.com/u/48804363",
+          "role": "viewer",
+          "bio": "Complectus thymbra adflicto est. Quia arcesso audacia audeo comitatus.",
+          "createdAt": "2024-04-17T04:46:50.404Z",
+          "address": {
+            "street": "48687 O'Conner Island",
+            "city": "Altadena",
+            "zip": "07298-2299",
+            "country": "Central African Republic"
+          }
+        },
+        "tags": [
+          "pv-qvoa-lmy",
+          "gsw-jame-uil-vtaslh-afxc-iwuikx",
+          "zs-odtxv-papz"
+        ]
+      },
+      {
+        "id": 9,
+        "name": "Biscuit",
+        "species": "parrot",
+        "price": 406.79,
+        "birthDate": "2025-08-23",
+        "owner": null,
+        "tags": [
+          "sqjt-jfkic-aw-m",
+          "ttvjnw-k-jwo",
+          "dpnjzj",
+          "jal-osfyz-ccoxbv",
+          "urhla-tk-l-cqc-u-bfcew"
+        ]
+      },
+      {
+        "id": 10,
+        "name": "Biscuit",
+        "species": "dog",
+        "price": 363.36,
+        "birthDate": "2024-03-15",
+        "owner": null,
+        "tags": [
+          "j-fxb-r-npgots",
+          "h-tgh-lepk",
+          "fhetc",
+          "dpidrw-c-enwdok-yx-esw-eoo"
+        ]
+      }
+    ],
+    "headers": {
+      "x-total-count": "50",
+      "link": "<http://localhost:4010/pets?page=2&limit=10>; rel=\"next\""
+    }
+  },
+  "GET /pets?page=3&limit=4 seed=1": {
+    "body": [
+      {
+        "id": 9,
+        "name": "Biscuit",
+        "species": "rabbit",
+        "price": 96.72,
+        "birthDate": "2024-03-17",
+        "owner": null,
+        "tags": [
+          "jqc-r-u-tlxxxm-nyz-h",
+          "c-s-vtpizq-dm-ch",
+          "iffcs-qkxha-soafwt-bzl-rhrt-mf",
+          "i-ehzznz",
+          "uqbc-rhlzmq-putj"
+        ]
+      },
+      {
+        "id": 10,
+        "name": "Biscuit",
+        "species": "cat",
+        "price": 309.09,
+        "birthDate": "2025-04-04",
+        "owner": {
+          "id": 7750,
+          "firstName": "Maye",
+          "lastName": "Boyle",
+          "username": "Maye.Boyle",
+          "email": "maye.boyle@yahoo.com",
+          "avatarUrl": "https://avatars.githubusercontent.com/u/81721240",
+          "role": "admin",
+          "bio": "Ventus assentator vorago asporto. Talis corrupti curvo victoria tergum vestigium.",
+          "createdAt": "2024-10-05T19:49:49.196Z",
+          "address": {
+            "street": "17390 Watsica-Lubowitz Junctions",
+            "city": "East George",
+            "zip": "78279",
+            "country": "Turkey"
+          }
+        },
+        "tags": [
+          "rn",
+          "tep-looxpx",
+          "pge-yrz-xrpbva-e-zddzdb",
+          "n-urkmr-oz-b-zt",
+          "qam-apq-l-dfqcp-zp"
+        ]
+      },
+      {
+        "id": 11,
+        "name": "Biscuit",
+        "species": "dog",
+        "price": 844.81,
+        "birthDate": "2025-10-16",
+        "owner": {
+          "id": 5074,
+          "firstName": "Catharine",
+          "lastName": "Cummerata",
+          "username": "Catharine_Cummerata85",
+          "email": "catharine_cummerata@hotmail.com",
+          "avatarUrl": "https://cdn.jsdelivr.net/gh/faker-js/assets-person-portrait/male/512/55.jpg",
+          "role": "admin",
+          "bio": "Minima deprecator maiores spoliatio velum pauci reprehenderit velociter reiciendis teres. Acer crur demo error arcus venio turpis voluptatem optio vox.",
+          "createdAt": "2025-01-12T17:08:12.710Z",
+          "address": {
+            "street": "5493 Amely Divide",
+            "city": "Dulceberg",
+            "zip": "68033-4902",
+            "country": "Chad"
+          }
+        },
+        "tags": [
+          "v-swmb-uqa-kb-lge",
+          "bbuq-zerd-da-a-awswc-uxo",
+          "jnewyn-oqzpzv-qbnu-jy",
+          "wonyzw-gzxgqg-bhkr",
+          "bbxj-m-ngjnqe-zetyn-pfv-dt"
+        ]
+      },
+      {
+        "id": 12,
+        "name": "Biscuit",
+        "species": "rabbit",
+        "price": 575.9,
+        "birthDate": "2025-08-29",
+        "owner": null,
+        "tags": [
+          "yyj-ows-dyd-udutth",
+          "tum-hg-uxmfs-vwejq-ff",
+          "tpb-hasc-ic-dddz-byf-f"
+        ]
+      }
+    ],
+    "headers": {
+      "x-total-count": "50",
+      "link": "<http://localhost:4010/pets?page=4&limit=4>; rel=\"next\", <http://localhost:4010/pets?page=2&limit=4>; rel=\"prev\""
+    }
+  },
+  "GET /users/42 200 seed=1": {
+    "body": {
+      "id": 42,
+      "firstName": "Keegan",
+      "lastName": "Davis",
+      "username": "Keegan.Davis51",
+      "email": "keegan_davis@hotmail.com",
+      "avatarUrl": "https://cdn.jsdelivr.net/gh/faker-js/assets-person-portrait/female/512/92.jpg",
+      "role": "member",
+      "bio": "Vulgaris quas officiis accusator cedo debeo crux antepono utrimque. Creta temeritas arto vigor appositus amor synagoga. Curvo deinde desparatus eaque tabella minus trado bestia.",
+      "createdAt": "2025-10-21T11:41:39.902Z",
+      "address": {
+        "street": "267 Washington Avenue",
+        "city": "East Aaronton",
+        "zip": "95178-7374",
+        "country": "China"
+      }
+    },
+    "headers": {}
+  },
+  "GET /users/42 200 seed=2": {
+    "body": {
+      "id": 42,
+      "firstName": "Francis",
+      "lastName": "Skiles",
+      "username": "Francis_Skiles41",
+      "email": "francis_skiles@yahoo.com",
+      "avatarUrl": "https://avatars.githubusercontent.com/u/38995515",
+      "role": "admin",
+      "bio": "Possimus debitis mollitia viscus spoliatio provident angelus.",
+      "createdAt": "2025-10-16T18:08:32.698Z",
+      "address": {
+        "street": "2614 Muller Port",
+        "city": "Mansfield",
+        "zip": "30479",
+        "country": "Brunei Darussalam"
+      }
+    },
+    "headers": {}
+  },
+  "GET /users/42 404 seed=1": {
+    "body": {
+      "code": "conflict",
+      "message": "Coepi vester tamen tergiversatio basium celo est argentum amor suppellex. Adeptio vere tunc uberrime. Quidem a surgo amet deripio cavus ventito consequatur benigne vesco."
+    },
+    "headers": {}
+  },
+  "GET /users/42 404 seed=2": {
+    "body": {
+      "code": "invalid",
+      "message": "Autem aranea tristis considero. Certe audacia cribro beatae tum ulciscor. Quisquam cado sufficio constans aetas."
+    },
+    "headers": {}
+  },
+  "DELETE /users/42 204 seed=1": {
+    "headers": {}
+  },
+  "DELETE /users/42 204 seed=2": {
+    "headers": {}
+  },
+  "GET /pets/42 200 seed=1": {
+    "body": {
+      "id": 42,
+      "name": "Rex",
+      "species": "dog",
+      "tags": [
+        "good-boy"
+      ]
+    },
+    "headers": {}
+  },
+  "GET /pets/42 200 seed=2": {
+    "body": {
+      "id": 42,
+      "name": "Rex",
+      "species": "dog",
+      "tags": [
+        "good-boy"
+      ]
+    },
+    "headers": {}
+  }
+}

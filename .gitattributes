@@ -1,0 +1,3 @@
+# LF everywhere: snapshot files must be byte-identical on every OS.
+* text=auto eol=lf
+*.tgz binary

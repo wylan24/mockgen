@@ -26,6 +26,24 @@ jobs:
       - run: node dist/cli.js validate examples/petstore.yaml
       - run: node dist/cli.js validate examples/samples
 
+  package:
+    # Install the packed tarball into an empty project, production deps only, and
+    # run the CLI and library from there: catches files missing from the package
+    # and runtime imports listed under devDependencies.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run smoke
+
   corpus:
     # The release gate: 50+ real-world specs must load (≥95%) and every generated
     # response must validate, apart from the spec bugs listed in corpus/baseline.json.

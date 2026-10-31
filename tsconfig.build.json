@@ -1,5 +1,9 @@
 {
   "extends": "./tsconfig.json",
-  "compilerOptions": { "rootDir": "src" },
+  "compilerOptions": {
+    "rootDir": "src",
+    // src/ isn't published, so source maps carry their sources with them.
+    "inlineSources": true
+  },
   "include": ["src"]
 }

@@ -37,7 +37,8 @@
     "node": ">=22.19"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "npm run clean && tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -45,20 +46,25 @@
     "prepublishOnly": "npm run build",
     "corpus:fetch": "tsx scripts/corpus-fetch.ts",
     "corpus": "tsx scripts/corpus.ts",
-    "corpus:explain": "tsx scripts/corpus-explain.ts"
+    "corpus:explain": "tsx scripts/corpus-explain.ts",
+    "smoke": "npm run build && tsx scripts/smoke-pack.ts"
   },
   "dependencies": {
     "@apidevtools/json-schema-ref-parser": "^16.0.5",
-    "@faker-js/faker": "^10.6.0",
-    "randexp": "^0.5.3",
+    "@faker-js/faker": "10.6.0",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "randexp": "0.5.3",
     "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
-    "ajv": "^8.20.0",
-    "ajv-formats": "^3.0.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   }
 }
