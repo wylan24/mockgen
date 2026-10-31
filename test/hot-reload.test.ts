@@ -76,10 +76,21 @@ function serve(target: string): Promise<Running> {
   });
 }
 
-/** Poll until `check` passes; fs.watch delivery and the 100 ms debounce are asynchronous. */
-async function eventually(check: () => Promise<void>, output: () => string) {
+/**
+ * Make `edit`, then poll until `check` passes; fs.watch delivery and the 100 ms
+ * debounce are asynchronous. The edit is repeated every 500 ms: on macOS a watcher
+ * goes live asynchronously after fs.watch() returns, so an edit made in that first
+ * moment (right after startup or a reload) can go unseen. A watcher that never
+ * delivers still fails the test.
+ */
+async function eventually(edit: () => Promise<unknown>, check: () => Promise<void>, output: () => string) {
   const deadline = Date.now() + TIMEOUT_MS;
+  let nextEdit = 0;
   for (;;) {
+    if (Date.now() >= nextEdit) {
+      await edit();
+      nextEdit = Date.now() + 500;
+    }
     try {
       return await check();
     } catch (err) {
@@ -116,8 +127,11 @@ describe('hot reload', { timeout: 30_000 }, () => {
     const { url, output } = await serve(path.join(root, 'openapi.yaml'));
     expect(await status(`${url}/widgets`)).toBe(404);
 
-    await fs.writeFile(path.join(root, 'openapi.yaml'), spec(['items', 'widgets']));
-    await eventually(async () => expect(await status(`${url}/widgets`)).toBe(200), output);
+    await eventually(
+      () => fs.writeFile(path.join(root, 'openapi.yaml'), spec(['items', 'widgets'])),
+      async () => expect(await status(`${url}/widgets`)).toBe(200),
+      output,
+    );
     expect(output()).toContain('Reloaded 2 routes');
   });
 
@@ -126,8 +140,11 @@ describe('hot reload', { timeout: 30_000 }, () => {
     const { url, output } = await serve(path.join(root, 'openapi.yaml'));
     expect(await json(`${url}/items`)).toHaveProperty('name');
 
-    await fs.writeFile(path.join(root, 'schemas/item.yaml'), itemSchema('title'));
-    await eventually(async () => expect(await json(`${url}/items`)).toHaveProperty('title'), output);
+    await eventually(
+      () => fs.writeFile(path.join(root, 'schemas/item.yaml'), itemSchema('title')),
+      async () => expect(await json(`${url}/items`)).toHaveProperty('title'),
+      output,
+    );
   });
 
   it('keeps serving the last good version while the spec is broken, then recovers', async () => {
@@ -135,12 +152,18 @@ describe('hot reload', { timeout: 30_000 }, () => {
     const file = path.join(root, 'openapi.yaml');
     const { url, output } = await serve(file);
 
-    await fs.writeFile(file, 'openapi: 3.1.0\npaths: [unclosed');
-    await eventually(async () => expect(output()).toContain('Reload failed, still serving the previous version'), output);
+    await eventually(
+      () => fs.writeFile(file, 'openapi: 3.1.0\npaths: [unclosed'),
+      async () => expect(output()).toContain('Reload failed, still serving the previous version'),
+      output,
+    );
     expect(await status(`${url}/items`)).toBe(200);
 
-    await fs.writeFile(file, spec(['items', 'widgets']));
-    await eventually(async () => expect(await status(`${url}/widgets`)).toBe(200), output);
+    await eventually(
+      () => fs.writeFile(file, spec(['items', 'widgets'])),
+      async () => expect(await status(`${url}/widgets`)).toBe(200),
+      output,
+    );
   });
 
   it('recovers after a broken atomic save (write + rename)', async () => {
@@ -148,12 +171,18 @@ describe('hot reload', { timeout: 30_000 }, () => {
     const file = path.join(root, 'openapi.yaml');
     const { url, output } = await serve(file);
 
-    await atomicWrite(file, 'openapi: 3.1.0\npaths: [unclosed');
-    await eventually(async () => expect(output()).toContain('Reload failed'), output);
+    await eventually(
+      () => atomicWrite(file, 'openapi: 3.1.0\npaths: [unclosed'),
+      async () => expect(output()).toContain('Reload failed'),
+      output,
+    );
     expect(await status(`${url}/items`)).toBe(200);
 
-    await atomicWrite(file, spec(['items', 'widgets']));
-    await eventually(async () => expect(await status(`${url}/widgets`)).toBe(200), output);
+    await eventually(
+      () => atomicWrite(file, spec(['items', 'widgets'])),
+      async () => expect(await status(`${url}/widgets`)).toBe(200),
+      output,
+    );
   });
 
   it('picks up a new file in a sample folder', async () => {
@@ -161,7 +190,10 @@ describe('hot reload', { timeout: 30_000 }, () => {
     const { url, output } = await serve(root);
     expect(await status(`${url}/teams`)).toBe(404);
 
-    await fs.writeFile(path.join(root, 'GET.teams.json'), JSON.stringify([{ id: 1, title: 'Core' }]));
-    await eventually(async () => expect(await status(`${url}/teams`)).toBe(200), output);
+    await eventually(
+      () => fs.writeFile(path.join(root, 'GET.teams.json'), JSON.stringify([{ id: 1, title: 'Core' }])),
+      async () => expect(await status(`${url}/teams`)).toBe(200),
+      output,
+    );
   });
 });
