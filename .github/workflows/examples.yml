@@ -44,13 +44,13 @@ jobs:
           npm install --no-save "$RUNNER_TEMP"/wylan24-mockgen-*.tgz
           npx mockgen validate api/openapi.yaml
 
-      - name: React + Vite: test and build
+      - name: 'React + Vite: test and build'
         if: matrix.example == 'react-vite'
         run: |
           npm test
           npm run build
 
-      - name: Next.js: build, then serve pages from the mock API
+      - name: 'Next.js: build, then serve pages from the mock API'
         if: matrix.example == 'nextjs'
         env:
           NEXT_TELEMETRY_DISABLED: '1'
@@ -63,7 +63,7 @@ jobs:
           curl -sf http://localhost:3000/tasks/12 | grep -q 'Assigned to'
           test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/tasks/abc)" = 404
 
-      - name: React Native: typecheck and bundle for Android
+      - name: 'React Native: typecheck and bundle for Android'
         if: matrix.example == 'react-native'
         run: |
           npm run typecheck
