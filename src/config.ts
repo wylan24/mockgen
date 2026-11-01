@@ -42,6 +42,8 @@ export interface MockConfig {
   locale?: string;
   delay?: number;
   stateful?: boolean;
+  /** Check requests against the spec; invalid ones get a 400/422. */
+  validateRequests?: boolean;
   port?: number;
   host?: string;
   /** Per-route overrides, keyed by `METHOD /path` exactly as in the spec, e.g. `GET /users/{id}`. */
@@ -84,13 +86,13 @@ const OVERRIDE_KEYS = new Set(['status', 'delay', 'headers', 'body', 'merge']);
 
 function checkConfig(raw: unknown, file: string): MockConfig {
   if (!isObject(raw)) throw new ConfigError(file, 'must export a config object (`export default { ... }`)');
-  const known = new Set<string>([...NUMBER_KEYS, 'locale', 'stateful', 'host', 'routes']);
+  const known = new Set<string>([...NUMBER_KEYS, 'locale', 'stateful', 'validateRequests', 'host', 'routes']);
   for (const key of Object.keys(raw)) if (!known.has(key)) throw new ConfigError(file, `unknown option "${key}". Options: ${[...known].join(', ')}`);
   for (const key of NUMBER_KEYS) {
     if (raw[key] !== undefined && !(Number.isInteger(raw[key]) && (raw[key] as number) >= 0)) throw new ConfigError(file, `"${key}" must be a whole number`);
   }
   for (const key of ['locale', 'host'] as const) if (raw[key] !== undefined && typeof raw[key] !== 'string') throw new ConfigError(file, `"${key}" must be a string`);
-  if (raw.stateful !== undefined && typeof raw.stateful !== 'boolean') throw new ConfigError(file, '"stateful" must be true or false');
+  for (const key of ['stateful', 'validateRequests'] as const) if (raw[key] !== undefined && typeof raw[key] !== 'boolean') throw new ConfigError(file, `"${key}" must be true or false`);
   if (raw.routes !== undefined) {
     if (!isObject(raw.routes)) throw new ConfigError(file, '"routes" must be an object keyed by "METHOD /path"');
     for (const [key, ov] of Object.entries(raw.routes)) {

@@ -96,6 +96,7 @@ mockgen infer <dir> [-o openapi.yaml]  # Write the schema inferred from samples 
 | `-r, --records` | `50` | Records in every list endpoint's collection |
 | `-l, --locale` | `en` | Language and region for names, addresses and phone numbers, e.g. `de`, `ja`, `pt_BR` |
 | `--stateful` | off | Remember changes: POST creates, PUT/PATCH update, DELETE removes (see [Stateful mode](#stateful-mode)) |
+| `--validate-requests` | off | Reject requests that don't match the spec (see [Request validation](#request-validation)) |
 | `-c, --config` | `mock.config.*` | Config file (see [Config file](#config-file-mockconfigts)) |
 | `--no-watch` | | Disable hot reload |
 | `-o, --out` | stdout | `infer` output file (`.yaml` or `.json`) |
@@ -160,6 +161,28 @@ curl -X DELETE localhost:4010/users/7   # then GET /users/7 is a 404, and /users
 - **Deterministic.** The same requests in the same order give the same results. `X-Mock-Status` still simulates errors, without changing anything.
 
 In tests: `createMockServer({ spec, stateful: true })`, and call `mock.reset()` in `beforeEach`.
+
+### Request validation
+
+By default mockgen answers any request, which is handy while you prototype. To catch client bugs early (a missing required field, `limit=500` when the max is 50, `/users/abc` when ids are integers), turn on request validation:
+
+```bash
+mockgen serve ./openapi.yaml --validate-requests
+```
+
+```bash
+curl -i 'localhost:4010/tasks?limit=500'
+# HTTP/1.1 400 Bad Request
+# x-mock-validation: query limit: must be <= 50
+```
+
+- **What's checked:** path, query and header parameters, and the JSON request body. Parameter text is converted to the schema's type first (`"5"` is the number 5, `a,b` is an array), and object parameters are read as `filter[status]=open` or as JSON. Cookies, security schemes and non-JSON bodies aren't checked.
+- **What invalid requests get:** the route's own 400 or 422 from the spec, if it documents one, so clients see the API's real error shape. Otherwise a 400 (parameters) or 422 (body) lists every problem: `{ "errors": [{ "in": "body", "path": "/title", "message": "must be string" }] }`. Either way, the `X-Mock-Validation` header summarizes them.
+- **OpenAPI rules:** `readOnly` fields (an `id`, a `createdAt`) never have to be sent. `oneOf` counts as "at least one branch", because many real specs have overlapping branches, and a mock shouldn't reject a client over that.
+- **`X-Mock-Status` skips validation,** so you can still force any response.
+- Turn it on in `mock.config.ts` with `validateRequests: true`, or in code with `createMockServer({ spec, validateRequests: true })`.
+
+Some real specs contradict themselves, for example a `type: string` parameter with `enum: [true, false]`. No request can satisfy those, so validation rejects them. Leave validation off for such specs, or fix the parameter.
 
 ### Config file (`mock.config.ts`)
 

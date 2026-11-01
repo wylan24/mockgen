@@ -149,3 +149,12 @@ describe('titles and signed numbers', () => {
     }
   });
 });
+
+describe('boolean schemas', () => {
+  it('treats true as anything and leaves out properties whose schema is false', () => {
+    const value = generate({ type: 'object', required: ['a'], properties: { a: { type: 'integer' }, b: false, c: true } } as never, { seed: 1 }) as Record<string, unknown>;
+    expect(value).toHaveProperty('a');
+    expect(value).not.toHaveProperty('b');
+    expect(() => generate(false as never)).not.toThrow();
+  });
+});

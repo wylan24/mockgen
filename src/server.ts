@@ -6,7 +6,9 @@ import type { MockModel, MockResponse, MockRoute, Schema } from './model.js';
 import { normalizeName } from './heuristics.js';
 import { fits, mergeAllOf, typeOf } from './schema.js';
 import type { RouteContext, RouteOverride } from './config.js';
+import { checkRequest, describeIssue, type RequestIssue } from './requests.js';
 import { type CollectionState, MockState } from './state.js';
+import { ResponseValidator } from './validate.js';
 
 export interface MockServerOptions {
   model: MockModel;
@@ -26,6 +28,12 @@ export interface MockServerOptions {
    * depends only on the spec, the seed and the request.
    */
   stateful?: boolean;
+  /**
+   * Check requests against the spec: path, query and header parameters and the JSON
+   * body. Invalid requests get the spec's 400/422 response (or a generated one
+   * listing the problems) and an `X-Mock-Validation` header. Default false.
+   */
+  validateRequests?: boolean;
   /** Per-route overrides, keyed by `METHOD /path` as in the spec (see `mock.config.ts`). */
   overrides?: Record<string, RouteOverride>;
 }
@@ -68,19 +76,47 @@ export function createMockServer(options: MockServerOptions): MockServer {
   const seed = options.seed ?? 1;
   const state = options.stateful ? new MockState() : undefined;
   let overrides = options.overrides;
+  let requestValidator = options.validateRequests ? new ResponseValidator(model.openapi, { direction: 'request' }) : undefined;
 
   const server = http.createServer(async (req, res) => {
     const started = performance.now();
     const url = new URL(req.url ?? '/', 'http://localhost');
     const method = (req.method ?? 'GET').toUpperCase();
+    const forcedStatus = header(req, 'x-mock-status') ?? url.searchParams.get('__status') ?? undefined;
 
-    // Bodies only matter in stateful mode; otherwise drain them.
-    let body: { value?: unknown; error?: MockResult } = {};
-    if (state && (method === 'POST' || method === 'PUT' || method === 'PATCH')) body = await readJsonBody(req);
+    // Bodies only matter in stateful mode and for request validation; otherwise drain them.
+    let body: { value?: unknown; present?: boolean; error?: MockResult } = {};
+    if ((state || requestValidator) && (method === 'POST' || method === 'PUT' || method === 'PATCH')) body = await readJsonBody(req);
     else req.resume();
 
-    let result: MockResult;
-    if (body.error) {
+    const input: RespondInput = {
+      method,
+      path: url.pathname,
+      seed,
+      locale: options.locale,
+      status: forcedStatus,
+      query: url.searchParams,
+      origin: req.headers.host ? `http://${req.headers.host}` : undefined,
+      records: options.records,
+      state,
+      body: body.value,
+      overrides,
+    };
+
+    let result: MockResult | undefined;
+    // X-Mock-Status is a deliberate simulation, so it skips validation.
+    if (!body.error && requestValidator && forcedStatus === undefined) {
+      const { route, params } = findRoute(model, method, url.pathname);
+      if (route) {
+        const headers = Object.fromEntries(Object.entries(req.headers).map(([k, v]) => [k.toLowerCase(), Array.isArray(v) ? v.join(', ') : v]));
+        const issues = checkRequest(route, { params, query: url.searchParams, headers, body: body.value, hasBody: body.present }, requestValidator);
+        if (issues.length) result = invalidRequest(model, route, issues, input);
+      }
+    }
+
+    if (result) {
+      // Already answered: the request didn't match the spec.
+    } else if (body.error) {
       result = body.error;
     } else if (state && method === 'POST' && url.pathname === RESET_PATH) {
       state.reset();
@@ -88,19 +124,7 @@ export function createMockServer(options: MockServerOptions): MockServer {
     } else if (method === 'OPTIONS' && !findRoute(model, 'OPTIONS', url.pathname).route) {
       result = { status: 204, body: undefined, headers: {} };
     } else {
-      result = respond(model, {
-        method,
-        path: url.pathname,
-        seed,
-        locale: options.locale,
-        status: header(req, 'x-mock-status') ?? url.searchParams.get('__status') ?? undefined,
-        query: url.searchParams,
-        origin: req.headers.host ? `http://${req.headers.host}` : undefined,
-        records: options.records,
-        state,
-        body: body.value,
-        overrides,
-      });
+      result = respond(model, input);
     }
 
     const delay = Number(header(req, 'x-mock-delay') ?? url.searchParams.get('__delay') ?? result.delay ?? options.delay ?? 0);
@@ -137,6 +161,7 @@ export function createMockServer(options: MockServerOptions): MockServer {
     setModel(next) {
       model = next;
       state?.reset();
+      if (requestValidator) requestValidator = new ResponseValidator(next.openapi, { direction: 'request' });
     },
     reset() {
       state?.reset();
@@ -147,8 +172,12 @@ export function createMockServer(options: MockServerOptions): MockServer {
   };
 }
 
-/** Read a JSON request body: `value` is undefined for an empty body; `error` is a 400 or 413 to send instead. */
-async function readJsonBody(req: http.IncomingMessage): Promise<{ value?: unknown; error?: MockResult }> {
+/**
+ * Read a request body. `value` is the parsed JSON, undefined for an empty or non-JSON
+ * body; `present` says whether there was a body at all; `error` is a 400 or 413 to send.
+ * Only JSON (or an unlabelled body) is parsed, so a form upload isn't "invalid JSON".
+ */
+async function readJsonBody(req: http.IncomingMessage): Promise<{ value?: unknown; present?: boolean; error?: MockResult }> {
   const chunks: Buffer[] = [];
   let size = 0;
   for await (const chunk of req as AsyncIterable<Buffer>) {
@@ -161,8 +190,10 @@ async function readJsonBody(req: http.IncomingMessage): Promise<{ value?: unknow
   }
   const text = Buffer.concat(chunks).toString('utf8').trim();
   if (!text) return {};
+  const type = req.headers['content-type'];
+  if (type && !/json/i.test(type)) return { present: true };
   try {
-    return { value: JSON.parse(text) };
+    return { value: JSON.parse(text), present: true };
   } catch {
     return { error: errorResult(400, 'Request body is not valid JSON') };
   }
@@ -508,6 +539,23 @@ function applyPathParams(body: Record<string, unknown>, schema: Schema, route: M
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === 'object' && !Array.isArray(v);
+}
+
+/**
+ * The answer to a request that doesn't match the spec: 422 for body problems, 400 for
+ * parameters. If the route documents 400 or 422, that response is served, so clients
+ * see the API's real error shape; otherwise a generated one lists each problem. Either
+ * way, `X-Mock-Validation` summarizes what failed.
+ */
+function invalidRequest(model: MockModel, route: MockRoute, issues: RequestIssue[], input: RespondInput): MockResult {
+  const preferred = issues.some((i) => i.in === 'body') ? 422 : 400;
+  const documented = [preferred, preferred === 422 ? 400 : 422].find((s) => route.responses.some((r) => r.status === s && !r.isDefault));
+  const result: MockResult = documented
+    ? respond(model, { ...input, status: documented, state: undefined, body: undefined })
+    : { status: preferred, body: { error: http.STATUS_CODES[preferred], message: "The request doesn't match the spec", errors: issues }, headers: {} };
+  // Header values must be printable ASCII.
+  result.headers = { ...result.headers, 'x-mock-validation': issues.map(describeIssue).join('; ').replace(/[^\x20-\x7e]/g, '?').slice(0, 2000) };
+  return result;
 }
 
 function errorResult(status: number, message: string): MockResult {

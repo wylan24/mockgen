@@ -21,17 +21,30 @@ export interface ValidationResult {
   valid: boolean;
   /** Human-readable errors when invalid. */
   errors?: string;
+  /** Each problem with its JSON Pointer, e.g. `{ path: '/title', message: 'must be string' }`. */
+  issues?: { path: string; message: string }[];
+}
+
+export interface ValidatorOptions {
+  /**
+   * `response` (default): `writeOnly` properties never appear. `request`: `readOnly`
+   * properties are never required, and every problem is reported, not just the first.
+   */
+  direction?: 'request' | 'response';
 }
 
 export class ResponseValidator {
-  private ajv = new Ajv2020({ strict: false, allErrors: false, logger: false, validateSchema: false });
+  private ajv: Ajv2020;
   private ids = new WeakMap<Schema, string>();
   private failed = new WeakSet<Schema>();
   private nextId = 0;
   private readonly openapi30: boolean;
+  private readonly direction: 'request' | 'response';
 
   /** @param openapi the spec's `openapi` version; 3.0 schemas get converted. */
-  constructor(openapi = '3.1.0') {
+  constructor(openapi = '3.1.0', options: ValidatorOptions = {}) {
+    this.direction = options.direction ?? 'response';
+    this.ajv = new Ajv2020({ strict: false, allErrors: this.direction === 'request', logger: false, validateSchema: false });
     addFormats(this.ajv);
     this.openapi30 = openapi.startsWith('3.0');
   }
@@ -47,7 +60,9 @@ export class ResponseValidator {
       throw err;
     }
     if (!fn) throw new Error('schema could not be compiled');
-    return fn(value) ? { valid: true } : { valid: false, errors: this.ajv.errorsText(fn.errors) };
+    if (fn(value)) return { valid: true };
+    const issues = (fn.errors ?? []).map((e) => ({ path: e.instancePath, message: e.message ?? 'is invalid' }));
+    return { valid: false, errors: this.ajv.errorsText(fn.errors), issues };
   }
 
   // Every object-like schema is registered with Ajv once, under an id, and referenced
@@ -57,14 +72,14 @@ export class ResponseValidator {
     if (!id) {
       id = `mock:s${this.nextId++}`;
       this.ids.set(node, id); // Before converting, so cycles find it.
-      this.ajv.addSchema({ $id: id, ...convertObject(node, this.openapi30, (child) => this.child(child)) });
+      this.ajv.addSchema({ $id: id, ...convertObject(node, this.openapi30, (child) => this.child(child), this.direction) });
     }
     return id;
   }
 
   private child(node: unknown): unknown {
     if (!isObject(node)) return node;
-    return isComposite(node) ? { $ref: this.register(node) } : convertObject(node, this.openapi30, (c) => this.child(c));
+    return isComposite(node) ? { $ref: this.register(node) } : convertObject(node, this.openapi30, (c) => this.child(c), this.direction);
   }
 }
 
@@ -101,7 +116,7 @@ export function toJsonSchema(root: Schema, openapi30: boolean): Schema {
 }
 
 /** Convert one schema object's own keywords; `child` converts nested schemas. */
-function convertObject(node: Schema, openapi30: boolean, child: (s: unknown) => unknown): Schema {
+function convertObject(node: Schema, openapi30: boolean, child: (s: unknown) => unknown, direction: 'request' | 'response' = 'response'): Schema {
   const out: Schema = {};
   for (const [k, v] of Object.entries(node)) {
     if (k.startsWith('x-') || DROPPED_KEYWORDS.has(k) || (openapi30 && k === 'nullable')) continue;
@@ -125,8 +140,20 @@ function convertObject(node: Schema, openapi30: boolean, child: (s: unknown) => 
     ];
   }
 
+  // Requests: `oneOf` counts as "at least one branch". Many specs have branches that
+  // overlap (or differ only by custom formats no validator knows), and a mock shouldn't
+  // reject a client over that. Responses keep the strict reading.
+  if (direction === 'request' && Array.isArray(out.oneOf)) {
+    if (out.anyOf) out.allOf = [...(out.allOf ?? []), { anyOf: out.oneOf }];
+    else out.anyOf = out.oneOf;
+    delete out.oneOf;
+  }
+  // Requests never need to send readOnly properties (an id, a createdAt).
+  if (direction === 'request' && isObject(node.properties) && Array.isArray(out.required)) {
+    out.required = out.required.filter((r: string) => !(node.properties[r] as Schema)?.readOnly);
+  }
   // Responses never contain writeOnly properties, so they can't be required there.
-  if (isObject(node.properties)) {
+  if (direction === 'response' && isObject(node.properties)) {
     const writeOnly = Object.keys(node.properties).filter((p) => (node.properties[p] as Schema)?.writeOnly);
     for (const p of writeOnly) delete out.properties[p];
     if (Array.isArray(out.required)) out.required = out.required.filter((r: string) => !writeOnly.includes(r));
