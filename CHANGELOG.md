@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.1.0-alpha.5] - 2026-11-01
+
 ### Added
 
 - Guides: getting started, starting from sample responses, front-end states, testing, and CI. They're in [docs/guides](docs/guides).
@@ -51,7 +53,8 @@ First public alpha.
 - Load errors show paths relative to the working directory, and a busy port gets a clear message.
 - Lower memory use: only Faker's English locale is loaded.
 
-[Unreleased]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.4...HEAD
+[Unreleased]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.5...HEAD
+[0.1.0-alpha.5]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.4...v0.1.0-alpha.5
 [0.1.0-alpha.4]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.2...v0.1.0-alpha.4
 [0.1.0-alpha.2]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.1...v0.1.0-alpha.2
 [0.1.0-alpha.1]: https://github.com/wylan24/mockgen/releases/tag/v0.1.0-alpha.1
