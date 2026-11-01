@@ -44,7 +44,7 @@ Any other command or option works as usual, for example:
 docker run --rm -p 4010:4010 -v "$PWD:/api" ghcr.io/wylan24/mockgen serve /api/spec.json --seed 2
 ```
 
-- **Platforms.** Images are published for `linux/amd64` and `linux/arm64` (Apple silicon, Graviton), tagged by version (`0.1.0-alpha.6`), with `latest` and `next` matching npm's dist-tags.
+- **Platforms.** Images are published for `linux/amd64` and `linux/arm64` (Apple silicon, Graviton), tagged by version (`0.1.0-alpha.7`), with `latest` and `next` matching npm's dist-tags.
 - **Host.** The image sets `MOCKGEN_HOST=0.0.0.0`, so the server is reachable from outside the container without `--host`.
 - **Non-root.** It runs as the unprivileged `node` user. The mounted spec only needs to be readable.
 - **Docker Compose.** Add it as a service next to your app:
@@ -52,7 +52,7 @@ docker run --rm -p 4010:4010 -v "$PWD:/api" ghcr.io/wylan24/mockgen serve /api/s
   ```yaml
   services:
     api:
-      image: ghcr.io/wylan24/mockgen:0.1.0-alpha.6
+      image: ghcr.io/wylan24/mockgen:0.1.0-alpha.7
       ports: ['4010:4010']
       volumes: ['./openapi.yaml:/api/openapi.yaml:ro']
   ```

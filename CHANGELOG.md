@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.1.0-alpha.7] - 2026-11-01
+
 ### Added
 
 - Config file: `mock.config.ts` (or `.mts`, `.js`, `.mjs`, `.json`), found in the current folder or given with `--config`. It sets defaults for the command-line options (flags still win) and per-route overrides: `status`, `body` (fixed or computed from the request), `merge`, `headers` and `delay`. Route keys that match no route are an error; fixed bodies are checked against the spec. TypeScript configs need no build step on Node 22.18+, and the config reloads with the spec. In code: `createMockServer({ overrides })`.
@@ -63,7 +65,8 @@ First public alpha.
 - Load errors show paths relative to the working directory, and a busy port gets a clear message.
 - Lower memory use: only Faker's English locale is loaded.
 
-[Unreleased]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.6...HEAD
+[Unreleased]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.7...HEAD
+[0.1.0-alpha.7]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.6...v0.1.0-alpha.7
 [0.1.0-alpha.6]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.5...v0.1.0-alpha.6
 [0.1.0-alpha.5]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.4...v0.1.0-alpha.5
 [0.1.0-alpha.4]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.2...v0.1.0-alpha.4
