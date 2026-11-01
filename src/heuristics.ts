@@ -69,7 +69,7 @@ const STRING_RULES: StringRule[] = [
   [/^(domain|hostname|host)$/, (f) => f.internet.domainName()],
   [/^(useragent)$/, (f) => f.internet.userAgent()],
   [/^(password|secret)$/, (f) => f.internet.password({ length: 16 })],
-  [/^(title|headline|subject)$/, (f) => sentence(f.lorem.sentence({ min: 3, max: 7 }))],
+  [/^(title|headline|subject)$/, (f, r) => title(f, r)],
   [/^(description|summary|bio|about|excerpt)$/, (f) => f.lorem.sentences({ min: 1, max: 3 })],
   [/^(body|content|text|comment|message|note|notes)$/, (f) => f.lorem.paragraph()],
   [/^status$/, (f) => f.helpers.arrayElement(['active', 'pending', 'inactive'])],
@@ -116,8 +116,15 @@ export function looksLikeDate(name: string): boolean {
 
 type NumberRule = [RegExp, (f: Faker, integer: boolean) => number];
 
+/** Number fields that are naturally negative sometimes: inference never adds `minimum: 0` to them. */
+export const SIGNED_NUMBER = /(lat|latitude|lng|lon|long|longitude|balance|profit|pnl|netincome|change|delta|diff|difference|offset|temp|temperature|celsius|fahrenheit|elevation|altitude|growth)$/;
+
 const NUMBER_RULES: NumberRule[] = [
-  [/(price|amount|cost|balance|salary|fee|subtotal|tax|revenue)$/, (f, int) => (int ? f.number.int({ min: 100, max: 100_000 }) : f.number.float({ min: 1, max: 1000, fractionDigits: 2 }))],
+  [/(balance|profit|pnl|netincome)$/, (f, int) => (int ? f.number.int({ min: -50_000, max: 100_000 }) : f.number.float({ min: -500, max: 1000, fractionDigits: 2 }))],
+  [/(change|delta|diff|difference|growth)$/, (f, int) => (int ? f.number.int({ min: -100, max: 100 }) : f.number.float({ min: -10, max: 10, fractionDigits: 2 }))],
+  [/(temp|temperature|celsius)$/, (f, int) => (int ? f.number.int({ min: -20, max: 40 }) : f.number.float({ min: -20, max: 40, fractionDigits: 1 }))],
+  [/fahrenheit$/, (f, int) => (int ? f.number.int({ min: -5, max: 105 }) : f.number.float({ min: -5, max: 105, fractionDigits: 1 }))],
+  [/(price|amount|cost|salary|fee|subtotal|tax|revenue)$/, (f, int) => (int ? f.number.int({ min: 100, max: 100_000 }) : f.number.float({ min: 1, max: 1000, fractionDigits: 2 }))],
   [/^age$/, (f) => f.number.int({ min: 18, max: 85 })],
   [/^(lat|latitude)$/, (f) => f.location.latitude()],
   [/^(lng|lon|long|longitude)$/, (f) => f.location.longitude()],
@@ -155,4 +162,15 @@ function email(f: Faker, r: RecordContext) {
 
 function sentence(s: string) {
   return s.replace(/\.$/, '');
+}
+
+/** A title that fits the record: a product, a job, a book, or else a short readable phrase. */
+function title(f: Faker, r: RecordContext) {
+  const owner = normalizeName(r.owner ?? '');
+  if (/(product|item|sku)$/.test(owner) || has(r, 'price', 'sku', 'cost', 'stock', 'inventory')) return f.commerce.productName();
+  if (/(job|position|vacancy|opening|posting)$/.test(owner) || has(r, 'salary', 'employer', 'seniority', 'employmenttype')) return f.person.jobTitle();
+  if (/(book|novel|movie|film|album|song|track|episode)$/.test(owner) || has(r, 'isbn', 'author', 'publisher', 'director', 'artist', 'genre')) return f.book.title();
+  // Tasks, issues, posts, events…: "Calculate optical protocol" reads better than Latin.
+  const phrase = `${f.hacker.verb()} ${f.hacker.adjective()} ${f.hacker.noun()}`;
+  return phrase.charAt(0).toUpperCase() + phrase.slice(1);
 }

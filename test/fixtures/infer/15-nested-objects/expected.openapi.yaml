@@ -36,7 +36,6 @@ paths:
                         properties:
                           lat:
                             type: number
-                            minimum: 0
                           lng:
                             type: number
                         required:

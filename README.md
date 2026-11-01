@@ -153,7 +153,7 @@ curl -X DELETE localhost:4010/users/7   # then GET /users/7 is a 404, and /users
 - **Create.** POST to a list path creates a record: generated from the schema, with your fields on top. It gets the next id (51, 52, … for integer ids; a fresh generated one otherwise), and appears in the detail route and at the end of the list.
 - **Update and delete.** PUT and PATCH merge your fields into the record. DELETE removes it. Lists, totals and paging reflect both.
 - **Not found.** Ids that aren't in the collection get the spec's 404, like a real API.
-- **Always valid.** Fields that don't fit the schema, unknown fields, read-only fields and the id are ignored, so responses stay valid. Fields you set don't regenerate related ones: a user created with a new name keeps its generated email.
+- **Always valid.** Fields that don't fit the schema, unknown fields, read-only fields and the id are ignored, so responses stay valid. A changed name carries over to the email and username (Ada Lovelace becomes `ada.lovelace@…`), unless you set those too.
 - **Reset.** `POST /__mockgen/reset` (or `mock.reset()`) goes back to the generated data. So does a spec reload. Changes live in memory and are lost when the server stops.
 - **Deterministic.** The same requests in the same order give the same results. `X-Mock-Status` still simulates errors, without changing anything.
 

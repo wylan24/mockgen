@@ -46,7 +46,7 @@ All samples for one route and status are merged:
 - **Nullable fields.** A key that's `null` in some samples becomes nullable.
 - **Formats.** ISO dates and date-times, emails, URLs and UUIDs are detected, but only when every value matches. One email and one phone number in the same field is plain text.
 - **Enums.** A few short values repeated across at least 4 samples (`status: "paid" | "pending" | "refunded"`) become an enum. Free text (`title`, `name`, `description`…), digit-only strings like zip codes, and fields with many distinct values never do.
-- **Numbers.** A mix of integers and decimals is a `number`. If no sample is negative, the field gets `minimum: 0`.
+- **Numbers.** A mix of integers and decimals is a `number`. If no sample is negative, the field gets `minimum: 0`, except for names that can naturally be negative: `lat`/`lng`, `balance`, `change`/`delta`, temperatures, `offset`, `elevation` and the like.
 - **Mixed types.** A field that's a string in one sample and a number in another becomes `anyOf`.
 
 More samples give better inference. Two or three variants of a response (a full record, a sparse one, one with `null`s) are usually enough. Add them with `~name` files.

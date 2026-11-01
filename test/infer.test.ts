@@ -81,3 +81,13 @@ describe('inferSchema', () => {
     }
   });
 });
+
+describe('signed number names', () => {
+  it('never adds minimum: 0 to fields that can be negative, even from positive samples', () => {
+    const s = inferSchema({ lat: 38.9, lng: 77.1, balance: 10, count: 3 });
+    expect(s.properties.lat).toEqual({ type: 'number' });
+    expect(s.properties.lng).toEqual({ type: 'number' });
+    expect(s.properties.balance).toEqual({ type: 'integer' });
+    expect(s.properties.count).toEqual({ type: 'integer', minimum: 0 });
+  });
+});

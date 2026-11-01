@@ -1,3 +1,4 @@
+import { normalizeName, SIGNED_NUMBER } from './heuristics.js';
 import type { Schema } from './model.js';
 
 // Schema inference works in two passes: `observe` folds every sample value into an
@@ -113,7 +114,9 @@ function finalize(acc: Acc, key?: string): Schema {
   if (acc.arrays) variants.push({ type: 'array', items: acc.items && acc.items.seen ? finalize(acc.items) : {} });
   if (acc.strings) variants.push(stringSchema(acc, key));
   if (acc.integers || acc.floats) {
-    variants.push({ type: acc.floats ? 'number' : 'integer', ...(acc.negative ? {} : { minimum: 0 }) });
+    // `minimum: 0` only when no sample was negative and the name isn't one that can be (lat, balance, …).
+    const signed = acc.negative || (key !== undefined && SIGNED_NUMBER.test(normalizeName(key)));
+    variants.push({ type: acc.floats ? 'number' : 'integer', ...(signed ? {} : { minimum: 0 }) });
   }
   if (acc.booleans) variants.push({ type: 'boolean' });
 
