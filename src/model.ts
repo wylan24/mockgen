@@ -15,6 +15,20 @@ export interface MockResponse {
   contentType?: string;
 }
 
+export interface MockParameter {
+  name: string;
+  in: 'path' | 'query' | 'header' | 'cookie';
+  required: boolean;
+  schema?: Schema;
+}
+
+export interface MockRequestBody {
+  required: boolean;
+  /** Schema of the JSON body, when the spec has an `application/json` (or `+json`) one. */
+  schema?: Schema;
+  contentTypes: string[];
+}
+
 export interface MockRoute {
   method: string;
   /** Path template as written in the spec, e.g. `/users/{id}`. */
@@ -23,6 +37,9 @@ export interface MockRoute {
   paramNames: string[];
   operationId?: string;
   responses: MockResponse[];
+  /** Request parameters from the spec, path-level and operation-level merged. Absent for sample folders. */
+  parameters?: MockParameter[];
+  requestBody?: MockRequestBody;
 }
 
 export interface MockModel {

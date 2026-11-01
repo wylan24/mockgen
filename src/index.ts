@@ -2,14 +2,15 @@ import { loadSource } from './load.js';
 import { createMockServer as createServer, type MockServer, type MockServerOptions } from './server.js';
 
 export { availableLocales, generate, type GenerateOptions } from './generate.js';
-export type { MockModel, MockResponse, MockRoute, Schema } from './model.js';
+export type { MockModel, MockParameter, MockRequestBody, MockResponse, MockRoute, Schema } from './model.js';
 export { inferSchema, SchemaInferrer } from './infer.js';
 export { loadSource } from './load.js';
 export { loadOpenApi, SpecLoadError } from './openapi.js';
 export { formatOpenApi, loadSamples, parseSampleName, toOpenApi } from './samples.js';
-export { ResponseValidator, toJsonSchema, type ValidationResult } from './validate.js';
+export { ResponseValidator, toJsonSchema, type ValidationResult, type ValidatorOptions } from './validate.js';
 export { respond, type MockResult, type MockServer, type MockServerOptions, type RespondInput } from './server.js';
 export { MockState } from './state.js';
+export { checkRequest, describeIssue, type RequestIssue, type RequestParts } from './requests.js';
 export { CONFIG_FILES, checkOverrides, ConfigError, defineConfig, findConfig, loadConfig, normalizeRoutes, type JsonValue, type MockConfig, type RouteContext, type RouteOverride } from './config.js';
 
 /**

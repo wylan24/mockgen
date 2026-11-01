@@ -32,6 +32,9 @@ Options
   -o, --out <file>    infer: write here instead of stdout (.yaml or .json)
       --stateful      Remember changes: POST creates, PUT/PATCH update, DELETE removes
                       (reset with POST /__mockgen/reset)
+      --validate-requests
+                      Check requests against the spec; invalid ones get a 400/422 and
+                      an X-Mock-Validation header saying what's wrong
   -c, --config <file> Config file (default: mock.config.{ts,mts,js,mjs,json} in this
                       folder, if there is one). Flags override its options.
       --no-watch      Disable hot reload
@@ -61,6 +64,7 @@ async function main(argv: string[]) {
       config: { type: 'string', short: 'c' },
       watch: { type: 'boolean', default: true },
       stateful: { type: 'boolean' },
+      'validate-requests': { type: 'boolean' },
       help: { type: 'boolean', short: 'h' },
       version: { type: 'boolean', short: 'v' },
     },
@@ -83,6 +87,7 @@ async function main(argv: string[]) {
     records: values.records !== undefined ? int(values.records, '--records') : (config.records ?? 50),
     locale: values.locale ?? config.locale,
     stateful: values.stateful ?? config.stateful ?? false,
+    validateRequests: values['validate-requests'] ?? config.validateRequests ?? false,
     watch: values.watch,
     configFile,
     overrides: normalizeRoutes(config.routes),
@@ -107,6 +112,7 @@ interface Options {
   records: number;
   locale?: string;
   stateful: boolean;
+  validateRequests: boolean;
   watch: boolean;
   configFile?: string;
   overrides: Record<string, RouteOverride>;
@@ -123,7 +129,7 @@ async function serve(spec: string, opts: Options) {
   const { model, errors, warnings } = await loadWithOverrides(spec, opts.overrides);
   if (errors.length) fail(errors.join('\n  '));
   printWarnings(model, warnings);
-  const mock = createMockServer({ model, seed: opts.seed, delay: opts.delay, records: opts.records, locale: opts.locale, stateful: opts.stateful, overrides: opts.overrides, log: (line) => console.log(styleText('dim', line)) });
+  const mock = createMockServer({ model, seed: opts.seed, delay: opts.delay, records: opts.records, locale: opts.locale, stateful: opts.stateful, validateRequests: opts.validateRequests, overrides: opts.overrides, log: (line) => console.log(styleText('dim', line)) });
   const url = await mock.listen(opts.port, opts.host).catch((err: NodeJS.ErrnoException) => {
     if (err.code === 'EADDRINUSE') fail(`Port ${opts.port} is already in use on ${opts.host}. Pick another with --port ${opts.port + 1}, or --port 0 for any free port.`);
     if (err.code === 'EACCES') fail(`No permission to use port ${opts.port} on ${opts.host}. Ports below 1024 usually need admin rights; try --port 4010.`);
@@ -156,7 +162,7 @@ async function serve(spec: string, opts: Options) {
     console.log(styleText('dim', `  config: ${path.relative(process.cwd(), opts.configFile)}${count ? ` (${count} route override${count === 1 ? '' : 's'})` : ''}`));
   }
   for (const r of model.routes) console.log(`  ${styleText('cyan', r.method.padEnd(7))} ${url}${model.basePath}${r.path}`);
-  console.log(`\n${styleText('green', '✔')} Mock server ready at ${styleText('bold', url)} in ${Math.round(performance.now() - started)}ms (seed ${opts.seed}${opts.stateful ? ', stateful' : ''})\n`);
+  console.log(`\n${styleText('green', '✔')} Mock server ready at ${styleText('bold', url)} in ${Math.round(performance.now() - started)}ms (seed ${opts.seed}${opts.stateful ? ', stateful' : ''}${opts.validateRequests ? ', validating requests' : ''})\n`);
 
   const shutdown = () => mock.close().then(() => process.exit(0));
   process.once('SIGINT', shutdown);

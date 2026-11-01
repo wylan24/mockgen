@@ -4,8 +4,13 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Fixed
+
+- The generator crashed on boolean schemas (`true` or `false` as a property's schema). `true` now means any value, and `false` properties are left out.
+
 ### Added
 
+- Request validation (`--validate-requests`, `validateRequests: true` in `mock.config.ts` or `createMockServer()`). Path, query and header parameters and JSON bodies are checked against the spec. Invalid requests get the route's documented 400/422, or a generated one listing every problem, plus an `X-Mock-Validation` header. Parameters are converted from text to the schema's type, and object parameters are read in deepObject (`filter[status]=open`) or JSON form. `readOnly` fields aren't required, and `oneOf` counts as "at least one branch". Checked against 26,000+ parameters from the spec corpus for false rejections. `checkRequest()` is exported for use without a server.
 - A comparison with Prism, MSW and json-server in [docs/comparison.md](docs/comparison.md), including when each is the better choice.
 
 ## [0.1.0-alpha.8] - 2026-11-01

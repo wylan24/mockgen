@@ -1,6 +1,6 @@
 import path from 'node:path';
 import $RefParser from '@apidevtools/json-schema-ref-parser';
-import type { MockModel, MockResponse, MockRoute, Schema } from './model.js';
+import type { MockModel, MockParameter, MockRequestBody, MockResponse, MockRoute, Schema } from './model.js';
 import { DISCRIMINATOR, type Discriminator, fits, mergeAllOf } from './schema.js';
 
 export const METHODS = ['get', 'put', 'post', 'delete', 'patch', 'options', 'head', 'trace'] as const;
@@ -70,6 +70,8 @@ export async function loadOpenApi(file: string): Promise<MockModel> {
         ...compilePath(routePath),
         operationId: op.operationId,
         responses,
+        parameters: collectParameters(pathItem.parameters, op.parameters),
+        requestBody: collectRequestBody(op.requestBody),
       });
     }
   }
@@ -127,6 +129,28 @@ function resolveDiscriminators(doc: any, resolve: (ref: string) => Schema | unde
     for (const v of Object.values(s)) visit(v);
   };
   visit(doc);
+}
+
+/** Path-level parameters apply to every operation; an operation's own parameter with the same name and location replaces one. */
+function collectParameters(pathLevel: unknown, opLevel: unknown): MockParameter[] {
+  const byKey = new Map<string, MockParameter>();
+  for (const list of [pathLevel, opLevel]) {
+    if (!Array.isArray(list)) continue;
+    for (const p of list) {
+      if (!p || typeof p.name !== 'string' || !['path', 'query', 'header', 'cookie'].includes(p.in)) continue;
+      // A parameter's schema is usually under `schema`, rarely under `content`.
+      const schema = p.schema ?? (Object.values<any>(p.content ?? {})[0]?.schema as Schema | undefined);
+      byKey.set(`${p.in}:${p.name}`, { name: p.name, in: p.in, required: p.in === 'path' || !!p.required, schema });
+    }
+  }
+  return [...byKey.values()];
+}
+
+function collectRequestBody(body: any): MockRequestBody | undefined {
+  if (!body || typeof body !== 'object') return undefined;
+  const contentTypes = Object.keys(body.content ?? {});
+  const json = contentTypes.find((t) => /^application\/(.+\+)?json/i.test(t));
+  return { required: !!body.required, schema: json ? body.content[json]?.schema : undefined, contentTypes };
 }
 
 function collectResponses(responses: Record<string, any>, label: string, warnings: string[]): MockResponse[] {

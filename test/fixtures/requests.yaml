@@ -1,0 +1,82 @@
+openapi: 3.1.0
+info: { title: Request validation fixture, version: 1.0.0 }
+paths:
+  /items:
+    get:
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 50 } }
+        - { name: tags, in: query, schema: { type: array, items: { type: string } } }
+        - { name: active, in: query, schema: { type: boolean } }
+      responses:
+        '200':
+          description: Items
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Item' } }
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Item' }
+          application/x-www-form-urlencoded:
+            schema: { $ref: '#/components/schemas/Item' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Item' }
+        '422':
+          description: Invalid item
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /items/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      responses:
+        '200':
+          description: One item
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Item' }
+    put:
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Item' }
+      responses:
+        '200':
+          description: Replaced
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Item' }
+  /search:
+    get:
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string, minLength: 2 } }
+        - { name: X-Request-Id, in: header, required: true, schema: { type: string, format: uuid } }
+        - { name: Accept, in: header, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Item' } }
+components:
+  schemas:
+    Item:
+      type: object
+      required: [id, title, createdAt]
+      properties:
+        id: { type: integer, readOnly: true }
+        title: { type: string, maxLength: 10 }
+        priority: { type: string, enum: [low, high] }
+        createdAt: { type: string, format: date-time, readOnly: true }
+    Error:
+      type: object
+      required: [code]
+      properties:
+        code: { type: string }

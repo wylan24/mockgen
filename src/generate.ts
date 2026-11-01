@@ -92,6 +92,9 @@ export function generate(schema: Schema | undefined, opts: GenerateOptions = {})
 }
 
 function gen(schema: Schema, ctx: Ctx): unknown {
+  // JSON Schema allows `true` (anything) and `false` (nothing) as schemas.
+  if ((schema as unknown) === true) schema = {};
+  if (typeof schema !== 'object' || schema === null) return undefined;
   // Real examples beat fake data, unless the spec's example contradicts its own schema.
   if (schema.example !== undefined && fits(schema.example, schema)) return structuredClone(schema.example);
   const example = Array.isArray(schema.examples) ? schema.examples.find((e: unknown) => fits(e, schema)) : undefined;
@@ -225,7 +228,8 @@ function genObject(schema: Schema, ctx: Ctx): Record<string, unknown> {
   const required = new Set<string>(schema.required ?? []);
   const record: RecordContext = { siblings: siblingsOf(props), owner: ctx.name };
   for (const [name, propSchema] of Object.entries(props)) {
-    if (propSchema.writeOnly) continue;
+    // A `false` property schema means the property must not appear.
+    if ((propSchema as unknown) === false || propSchema.writeOnly) continue;
     if (!required.has(name) && (lean(ctx) || ON_REQUEST.has(name))) continue;
     ctx.budget.values--;
     out[name] = gen(propSchema, { ...ctx, depth: ctx.depth + 1, name, record });
