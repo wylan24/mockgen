@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- Config file: `mock.config.ts` (or `.mts`, `.js`, `.mjs`, `.json`), found in the current folder or given with `--config`. It sets defaults for the command-line options (flags still win) and per-route overrides: `status`, `body` (fixed or computed from the request), `merge`, `headers` and `delay`. Route keys that match no route are an error; fixed bodies are checked against the spec. TypeScript configs need no build step on Node 22.18+, and the config reloads with the spec. In code: `createMockServer({ overrides })`.
+
 ## [0.1.0-alpha.6] - 2026-11-01
 
 ### Added

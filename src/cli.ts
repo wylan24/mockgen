@@ -6,6 +6,7 @@ import { assertLocale, generate } from './generate.js';
 import type { MockModel } from './model.js';
 import { loadSource } from './load.js';
 import { formatOpenApi, loadSamples } from './samples.js';
+import { checkOverrides, findConfig, loadConfig, normalizeRoutes, type RouteOverride } from './config.js';
 import { createMockServer, respond } from './server.js';
 import { ResponseValidator } from './validate.js';
 
@@ -31,6 +32,8 @@ Options
   -o, --out <file>    infer: write here instead of stdout (.yaml or .json)
       --stateful      Remember changes: POST creates, PUT/PATCH update, DELETE removes
                       (reset with POST /__mockgen/reset)
+  -c, --config <file> Config file (default: mock.config.{ts,mts,js,mjs,json} in this
+                      folder, if there is one). Flags override its options.
       --no-watch      Disable hot reload
   -h, --help          Show this help
   -v, --version       Show the version
@@ -46,16 +49,18 @@ async function main(argv: string[]) {
     args: argv,
     allowPositionals: true,
     allowNegative: true,
+    // No defaults here: an unset flag falls back to the config file, then to the default.
     options: {
-      port: { type: 'string', short: 'p', default: '4010' },
-      host: { type: 'string', short: 'H', default: process.env.MOCKGEN_HOST || '127.0.0.1' },
-      seed: { type: 'string', short: 's', default: '1' },
-      delay: { type: 'string', short: 'd', default: '0' },
+      port: { type: 'string', short: 'p' },
+      host: { type: 'string', short: 'H' },
+      seed: { type: 'string', short: 's' },
+      delay: { type: 'string', short: 'd' },
       out: { type: 'string', short: 'o' },
-      records: { type: 'string', short: 'r', default: '50' },
+      records: { type: 'string', short: 'r' },
       locale: { type: 'string', short: 'l' },
+      config: { type: 'string', short: 'c' },
       watch: { type: 'boolean', default: true },
-      stateful: { type: 'boolean', default: false },
+      stateful: { type: 'boolean' },
       help: { type: 'boolean', short: 'h' },
       version: { type: 'boolean', short: 'v' },
     },
@@ -65,35 +70,60 @@ async function main(argv: string[]) {
   const [command, spec, ...rest] = positionals;
   if (values.help || !command) return console.log(HELP);
   if (!spec) fail(`Missing <spec>. Try: mockgen ${command} ./openapi.yaml`);
+  if (command === 'infer') return infer(spec, values.out);
+  if (!['serve', 'generate', 'validate'].includes(command)) fail(`Unknown command "${command}". Run mockgen --help.`);
 
-  const seed = int(values.seed, '--seed');
-  const locale = values.locale;
-  if (locale) {
+  const configFile = values.config ?? findConfig();
+  const config = configFile ? await loadConfig(configFile).catch((err: Error) => fail(err.message)) : {};
+  const opts: Options = {
+    port: values.port !== undefined ? int(values.port, '--port') : (config.port ?? 4010),
+    host: values.host ?? config.host ?? (process.env.MOCKGEN_HOST || '127.0.0.1'),
+    seed: values.seed !== undefined ? int(values.seed, '--seed') : (config.seed ?? 1),
+    delay: values.delay !== undefined ? int(values.delay.replace(/ms$/, ''), '--delay') : (config.delay ?? 0),
+    records: values.records !== undefined ? int(values.records, '--records') : (config.records ?? 50),
+    locale: values.locale ?? config.locale,
+    stateful: values.stateful ?? config.stateful ?? false,
+    watch: values.watch,
+    configFile,
+    overrides: normalizeRoutes(config.routes),
+  };
+  if (opts.locale) {
     try {
-      assertLocale(locale);
+      assertLocale(opts.locale);
     } catch (err) {
       fail((err as Error).message);
     }
   }
-  switch (command) {
-    case 'serve':
-      return serve(spec, { port: int(values.port, '--port'), host: values.host, seed, delay: int(values.delay.replace(/ms$/, ''), '--delay'), watch: values.watch, records: int(values.records, '--records'), locale, stateful: values.stateful });
-    case 'generate':
-      return generateCmd(spec, rest.join(' '), seed, int(values.records, '--records'), locale);
-    case 'validate':
-      return validate(spec, seed, locale);
-    case 'infer':
-      return infer(spec, values.out);
-    default:
-      fail(`Unknown command "${command}". Run mockgen --help.`);
-  }
+  if (command === 'serve') return serve(spec, opts);
+  if (command === 'generate') return generateCmd(spec, rest.join(' '), opts);
+  return validate(spec, opts);
 }
 
-async function serve(spec: string, opts: { port: number; host: string; seed: number; delay: number; watch: boolean; records: number; locale?: string; stateful: boolean }) {
-  const started = performance.now();
+interface Options {
+  port: number;
+  host: string;
+  seed: number;
+  delay: number;
+  records: number;
+  locale?: string;
+  stateful: boolean;
+  watch: boolean;
+  configFile?: string;
+  overrides: Record<string, RouteOverride>;
+}
+
+/** Load the spec and check the config's route overrides against it; `errors` are fatal. */
+async function loadWithOverrides(spec: string, overrides: Record<string, RouteOverride>) {
   const model = await loadSource(spec);
-  printWarnings(model);
-  const mock = createMockServer({ model, seed: opts.seed, delay: opts.delay, records: opts.records, locale: opts.locale, stateful: opts.stateful, log: (line) => console.log(styleText('dim', line)) });
+  return { model, ...checkOverrides(overrides, model) };
+}
+
+async function serve(spec: string, opts: Options) {
+  const started = performance.now();
+  const { model, errors, warnings } = await loadWithOverrides(spec, opts.overrides);
+  if (errors.length) fail(errors.join('\n  '));
+  printWarnings(model, warnings);
+  const mock = createMockServer({ model, seed: opts.seed, delay: opts.delay, records: opts.records, locale: opts.locale, stateful: opts.stateful, overrides: opts.overrides, log: (line) => console.log(styleText('dim', line)) });
   const url = await mock.listen(opts.port, opts.host).catch((err: NodeJS.ErrnoException) => {
     if (err.code === 'EADDRINUSE') fail(`Port ${opts.port} is already in use on ${opts.host}. Pick another with --port ${opts.port + 1}, or --port 0 for any free port.`);
     if (err.code === 'EACCES') fail(`No permission to use port ${opts.port} on ${opts.host}. Ports below 1024 usually need admin rights; try --port 4010.`);
@@ -102,11 +132,16 @@ async function serve(spec: string, opts: { port: number; host: string; seed: num
 
   // Watch before announcing "ready": a script that edits the spec as soon as it sees
   // that line would otherwise race the watcher and its edit could be missed.
-  if (opts.watch) watchSources(model, async () => {
+  // The config file is watched with the spec; either changing reloads both.
+  const extra = opts.configFile ? [opts.configFile] : [];
+  if (opts.watch) watchSources(model, extra, async () => {
     try {
-      const next = await loadSource(spec);
+      const overrides = opts.configFile ? normalizeRoutes((await loadConfig(opts.configFile)).routes) : opts.overrides;
+      const { model: next, errors, warnings } = await loadWithOverrides(spec, overrides);
+      if (errors.length) throw new Error(errors.join('\n  '));
       mock.setModel(next);
-      printWarnings(next);
+      mock.setOverrides(overrides);
+      printWarnings(next, warnings);
       console.log(`${styleText('green', '↻')} Reloaded ${next.routes.length} routes`);
       return next;
     } catch (err) {
@@ -116,6 +151,10 @@ async function serve(spec: string, opts: { port: number; host: string; seed: num
   });
 
   console.log(`\n${styleText('bold', model.title)} ${styleText('dim', model.version)}`);
+  if (opts.configFile) {
+    const count = Object.keys(opts.overrides).length;
+    console.log(styleText('dim', `  config: ${path.relative(process.cwd(), opts.configFile)}${count ? ` (${count} route override${count === 1 ? '' : 's'})` : ''}`));
+  }
   for (const r of model.routes) console.log(`  ${styleText('cyan', r.method.padEnd(7))} ${url}${model.basePath}${r.path}`);
   console.log(`\n${styleText('green', '✔')} Mock server ready at ${styleText('bold', url)} in ${Math.round(performance.now() - started)}ms (seed ${opts.seed}${opts.stateful ? ', stateful' : ''})\n`);
 
@@ -133,7 +172,7 @@ async function serve(spec: string, opts: { port: number; host: string; seed: num
  * that no longer exists. A folder watcher sees the rename and keeps working.
  * Sample folders are watched recursively, and any change in them counts.
  */
-function watchSources(model: MockModel, reload: () => Promise<MockModel | undefined>) {
+function watchSources(model: MockModel, extra: string[], reload: () => Promise<MockModel | undefined>) {
   // folder → names of the spec files in it, or 'all' for a sample folder
   const watchers = new Map<string, { watcher: fs.FSWatcher; names: Set<string> | 'all' }>();
   let timer: NodeJS.Timeout | undefined;
@@ -143,7 +182,7 @@ function watchSources(model: MockModel, reload: () => Promise<MockModel | undefi
     clearTimeout(timer);
     timer = setTimeout(async () => {
       const next = await reload();
-      if (next) watch(next.sources);
+      if (next) watch([...next.sources, ...extra]);
     }, 100);
   };
 
@@ -196,15 +235,16 @@ function watchSources(model: MockModel, reload: () => Promise<MockModel | undefi
       retry = setTimeout(() => watch(sources), 500);
     }
   };
-  watch(model.sources);
+  watch([...model.sources, ...extra]);
 }
 
-async function generateCmd(spec: string, route: string, seed: number, records: number, locale?: string) {
-  const model = await loadSource(spec);
+async function generateCmd(spec: string, route: string, { seed, records, locale, overrides }: Options) {
+  const { model, errors } = await loadWithOverrides(spec, overrides);
+  if (errors.length) fail(errors.join('\n  '));
   if (route) {
     const [method = 'GET', p = '/'] = route.includes(' ') ? route.split(/\s+/) : ['GET', route];
     const [pathname = '/', query] = p.split('?');
-    const result = respond(model, { method: method.toUpperCase(), path: pathname, query, seed, records, locale });
+    const result = respond(model, { method: method.toUpperCase(), path: pathname, query, seed, records, locale, overrides });
     if (result.status >= 400 && !model.routes.some((r) => r.pattern.test(pathname))) fail((result.body as any).message);
     return console.log(JSON.stringify(result.body, null, 2));
   }
@@ -226,13 +266,15 @@ async function infer(dir: string, out: string | undefined) {
   console.error(`${styleText('green', '✔')} Wrote ${model.routes.length} routes to ${out}`);
 }
 
-async function validate(spec: string, seed: number, locale?: string) {
-  const model = await loadSource(spec);
+async function validate(spec: string, { seed, locale, overrides }: Options) {
+  const { model, errors, warnings } = await loadWithOverrides(spec, overrides);
+  if (errors.length) fail(errors.join('\n  '));
   printWarnings(model);
   const validator = new ResponseValidator(model.openapi);
   let responses = 0;
   let skipped = 0;
-  const invalid: string[] = [];
+  // A fixed override body that doesn't match the spec is a failure here, not just a warning.
+  const invalid: string[] = [...warnings];
   for (const r of model.routes) {
     for (const res of r.responses) {
       if (!res.schema || res.hasExample) continue;
@@ -253,8 +295,8 @@ async function validate(spec: string, seed: number, locale?: string) {
   console.log(`${styleText('green', '✔')} ${summary}`);
 }
 
-function printWarnings(model: MockModel) {
-  for (const w of model.warnings) console.warn(styleText('yellow', `⚠ ${w}`));
+function printWarnings(model: MockModel, extra: string[] = []) {
+  for (const w of [...model.warnings, ...extra]) console.warn(styleText('yellow', `⚠ ${w}`));
 }
 
 function int(value: string, flag: string): number {
