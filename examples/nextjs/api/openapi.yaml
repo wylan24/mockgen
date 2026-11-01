@@ -1,0 +1,93 @@
+openapi: 3.1.0
+info:
+  title: Tasks API
+  version: 1.0.0
+paths:
+  /tasks:
+    get:
+      operationId: listTasks
+      parameters:
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 50 } }
+      responses:
+        '200':
+          description: A page of tasks
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, page, perPage, total]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Task' }
+                  page: { type: integer, minimum: 1 }
+                  perPage: { type: integer, minimum: 1 }
+                  total: { type: integer, minimum: 0 }
+    post:
+      operationId: createTask
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NewTask' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Task' }
+        '422':
+          description: Invalid task
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /tasks/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    get:
+      operationId: getTask
+      responses:
+        '200':
+          description: One task
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Task' }
+        '404':
+          description: No such task
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+components:
+  schemas:
+    Task:
+      type: object
+      required: [id, title, status, priority, createdAt, assignee]
+      properties:
+        id: { type: integer, minimum: 1 }
+        title: { type: string, maxLength: 80 }
+        status: { type: string, enum: [todo, in_progress, done] }
+        priority: { type: string, enum: [low, medium, high] }
+        dueDate: { type: [string, 'null'], format: date }
+        createdAt: { type: string, format: date-time }
+        assignee: { $ref: '#/components/schemas/User' }
+    NewTask:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string, maxLength: 80 }
+        priority: { type: string, enum: [low, medium, high] }
+    User:
+      type: object
+      required: [id, firstName, lastName, email, avatarUrl]
+      properties:
+        id: { type: integer, minimum: 1 }
+        firstName: { type: string }
+        lastName: { type: string }
+        email: { type: string, format: email }
+        avatarUrl: { type: string, format: uri }
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }

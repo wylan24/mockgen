@@ -1,0 +1,70 @@
+name: Examples
+
+# Build and test the example apps against mockgen as it is in this commit (packed
+# and installed over the published version), so a change that breaks them fails
+# here rather than after a release.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'examples/**'
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/examples.yml'
+
+jobs:
+  example:
+    strategy:
+      fail-fast: false
+      matrix:
+        example: [react-vite, nextjs, react-native]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: examples/${{ matrix.example }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Pack mockgen from this commit
+        working-directory: .
+        run: |
+          npm ci
+          npm run build
+          npm pack --pack-destination "$RUNNER_TEMP"
+
+      - name: Install the example, with this commit's mockgen
+        run: |
+          npm ci
+          npm install --no-save "$RUNNER_TEMP"/wylan24-mockgen-*.tgz
+          npx mockgen validate api/openapi.yaml
+
+      - name: React + Vite: test and build
+        if: matrix.example == 'react-vite'
+        run: |
+          npm test
+          npm run build
+
+      - name: Next.js: build, then serve pages from the mock API
+        if: matrix.example == 'nextjs'
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: |
+          npm run build
+          npx mockgen serve api/openapi.yaml --no-watch &
+          npx next start -p 3000 &
+          for i in $(seq 1 60); do curl -sf http://localhost:3000/ > /dev/null && break; sleep 1; done
+          curl -sf 'http://localhost:3000/?page=2' | grep -q 'Page <!-- -->2<!-- --> of <!-- -->5'
+          curl -sf http://localhost:3000/tasks/12 | grep -q 'Assigned to'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/tasks/abc)" = 404
+
+      - name: React Native: typecheck and bundle for Android
+        if: matrix.example == 'react-native'
+        run: |
+          npm run typecheck
+          npx expo export --platform android --no-bytecode --output-dir "$RUNNER_TEMP/rn-export"
