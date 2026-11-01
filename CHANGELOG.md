@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.1.0-alpha.9] - 2026-11-01
+
 ### Fixed
 
 - The generator crashed on boolean schemas (`true` or `false` as a property's schema). `true` now means any value, and `false` properties are left out.
@@ -84,7 +86,8 @@ First public alpha.
 - Load errors show paths relative to the working directory, and a busy port gets a clear message.
 - Lower memory use: only Faker's English locale is loaded.
 
-[Unreleased]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.8...HEAD
+[Unreleased]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.9...HEAD
+[0.1.0-alpha.9]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.8...v0.1.0-alpha.9
 [0.1.0-alpha.8]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.7...v0.1.0-alpha.8
 [0.1.0-alpha.7]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.6...v0.1.0-alpha.7
 [0.1.0-alpha.6]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.5...v0.1.0-alpha.6

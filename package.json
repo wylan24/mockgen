@@ -1,6 +1,6 @@
 {
   "name": "@wylan24/mockgen",
-  "version": "0.1.0-alpha.8",
+  "version": "0.1.0-alpha.9",
   "description": "Turn an OpenAPI spec into a running mock server with realistic, deterministic fake data — one command.",
   "keywords": [
     "mock",
