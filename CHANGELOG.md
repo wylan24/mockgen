@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- A comparison with Prism, MSW and json-server in [docs/comparison.md](docs/comparison.md), including when each is the better choice.
+
 ## [0.1.0-alpha.8] - 2026-11-01
 
 ### Changed

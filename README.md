@@ -67,6 +67,8 @@ Hot reload works when the container sees file changes on the mount. Some Docker 
 - [Testing with mockgen](docs/guides/testing.md): unit, integration and Playwright tests
 - [mockgen in CI](docs/guides/ci.md): validate specs on every pull request, and run end-to-end tests against the mock
 
+Coming from another tool, or choosing one? See [how mockgen compares with Prism, MSW and json-server](docs/comparison.md), including when each of those is the better pick.
+
 Example apps, each built against a mock API and checked in CI: [React + Vite](examples/react-vite), [Next.js](examples/nextjs) and [React Native (Expo)](examples/react-native).
 
 ## Why
