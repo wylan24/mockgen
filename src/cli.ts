@@ -22,7 +22,7 @@ GET.users.[id].404.json. Folders become path segments; [id] or {id} is a path pa
 
 Options
   -p, --port <n>      Port to listen on (default 4010)
-  -H, --host <host>   Host to bind (default 127.0.0.1)
+  -H, --host <host>   Host to bind (default 127.0.0.1, or $MOCKGEN_HOST if set)
   -s, --seed <n>      Seed for generated data (default 1)
   -d, --delay <ms>    Delay every response, e.g. 300 or 300ms
   -r, --records <n>   Records per list endpoint, paged with ?page=&limit= (default 50)
@@ -46,7 +46,7 @@ async function main(argv: string[]) {
     allowNegative: true,
     options: {
       port: { type: 'string', short: 'p', default: '4010' },
-      host: { type: 'string', short: 'H', default: '127.0.0.1' },
+      host: { type: 'string', short: 'H', default: process.env.MOCKGEN_HOST || '127.0.0.1' },
       seed: { type: 'string', short: 's', default: '1' },
       delay: { type: 'string', short: 'd', default: '0' },
       out: { type: 'string', short: 'o' },

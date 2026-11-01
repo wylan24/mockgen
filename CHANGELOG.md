@@ -8,6 +8,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 - Guides: getting started, starting from sample responses, front-end states, testing, and CI. They're in [docs/guides](docs/guides).
 - Example apps for React + Vite, Next.js and React Native (Expo) in [examples/](examples), built and tested in CI against each commit.
+- A Docker image, `ghcr.io/wylan24/mockgen`, for linux/amd64 and linux/arm64, published with every release. It runs as a non-root user and serves `/api/openapi.yaml` by default.
+- The `MOCKGEN_HOST` environment variable sets the default `--host`. The Docker image sets it to `0.0.0.0`.
 
 ## [0.1.0-alpha.4] - 2026-10-31
 
