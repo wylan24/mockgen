@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.1.0-alpha.6] - 2026-11-01
+
 ### Added
 
 - Stateful mode (`--stateful`, or `stateful: true` in `createMockServer()`). POST creates records, PUT/PATCH update them and DELETE removes them, and detail routes, lists, totals and paging reflect the changes. Unknown ids get the spec's 404. Reset with `POST /__mockgen/reset` or `mock.reset()`. The default stays stateless and unchanged.
@@ -57,7 +59,8 @@ First public alpha.
 - Load errors show paths relative to the working directory, and a busy port gets a clear message.
 - Lower memory use: only Faker's English locale is loaded.
 
-[Unreleased]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.5...HEAD
+[Unreleased]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.6...HEAD
+[0.1.0-alpha.6]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.5...v0.1.0-alpha.6
 [0.1.0-alpha.5]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.4...v0.1.0-alpha.5
 [0.1.0-alpha.4]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.2...v0.1.0-alpha.4
 [0.1.0-alpha.2]: https://github.com/wylan24/mockgen/compare/v0.1.0-alpha.1...v0.1.0-alpha.2
