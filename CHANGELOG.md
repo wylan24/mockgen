@@ -4,6 +4,11 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- Guides: getting started, starting from sample responses, front-end states, testing, and CI. They're in [docs/guides](docs/guides).
+- Example apps for React + Vite, Next.js and React Native (Expo) in [examples/](examples), built and tested in CI against each commit.
+
 ## [0.1.0-alpha.4] - 2026-10-31
 
 ### Changed

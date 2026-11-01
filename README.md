@@ -30,6 +30,16 @@ npm install --save-dev @wylan24/mockgen
 npx mockgen serve ./openapi.yaml
 ```
 
+## Guides and examples
+
+- [Getting started](docs/guides/getting-started.md): from a spec to a running mock in five minutes
+- [No spec yet? Start from sample responses](docs/guides/from-samples.md)
+- [Building loading, error and empty states](docs/guides/frontend-states.md)
+- [Testing with mockgen](docs/guides/testing.md): unit, integration and Playwright tests
+- [mockgen in CI](docs/guides/ci.md): validate specs on every pull request, and run end-to-end tests against the mock
+
+Example apps, each built against a mock API and checked in CI: [React + Vite](examples/react-vite), [Next.js](examples/nextjs) and [React Native (Expo)](examples/react-native).
+
 ## Why
 
 - **Realistic data.** Field names drive the data: `email`, `avatarUrl`, `createdAt`, `price`, `city` all look like the real thing, and a record's name, username and email match each other.
