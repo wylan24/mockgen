@@ -94,6 +94,7 @@ mockgen infer <dir> [-o openapi.yaml]  # Write the schema inferred from samples 
 | `-r, --records` | `50` | Records in every list endpoint's collection |
 | `-l, --locale` | `en` | Language and region for names, addresses and phone numbers, e.g. `de`, `ja`, `pt_BR` |
 | `--stateful` | off | Remember changes: POST creates, PUT/PATCH update, DELETE removes (see [Stateful mode](#stateful-mode)) |
+| `-c, --config` | `mock.config.*` | Config file (see [Config file](#config-file-mockconfigts)) |
 | `--no-watch` | | Disable hot reload |
 | `-o, --out` | stdout | `infer` output file (`.yaml` or `.json`) |
 
@@ -158,6 +159,40 @@ curl -X DELETE localhost:4010/users/7   # then GET /users/7 is a 404, and /users
 
 In tests: `createMockServer({ spec, stateful: true })`, and call `mock.reset()` in `beforeEach`.
 
+### Config file (`mock.config.ts`)
+
+Generated data covers most cases. When a route needs something specific, like a fixed body, a forced field, or an error to build against, put it in `mock.config.ts` next to where you run mockgen:
+
+```ts
+import type { MockConfig } from '@wylan24/mockgen';
+
+export default {
+  // Defaults for the command-line options. Flags still win.
+  seed: 1,
+  records: 20,
+  stateful: true,
+
+  routes: {
+    // Force fields; list items that mirror this route get them too.
+    'GET /users/{id}': { merge: { role: 'admin', plan: { tier: 'pro' } } },
+    // A fixed body…
+    'GET /health': { body: { status: 'ok' } },
+    // …or one computed from the request.
+    'GET /search': { body: ({ query }) => ({ results: [], query: query.get('q') }) },
+    // Always fail this route, slowly, while you build the error state.
+    'POST /checkout': { status: 402, delay: 800, headers: { 'retry-after': '30' } },
+  },
+} satisfies MockConfig;
+```
+
+- **Route keys** are `METHOD /path` exactly as in the spec. A key that matches no route stops mockgen with the list of real routes, so typos don't go unnoticed.
+- **Each route** takes `status` (serves the spec's response for that status, unless `body` is set), `body` (a value, or a function of `{ method, path, params, query, body, seed }`), `merge` (deep-merged into the generated body), `headers` and `delay`.
+- **A fixed `body` is checked** against the spec. `serve` warns if it doesn't match, and `validate` fails.
+- **Per-request headers still win.** `X-Mock-Status` and `X-Mock-Delay` on a request override the config for that request.
+- **Formats.** mockgen looks for `mock.config.ts`, `.mts`, `.js`, `.mjs` or `.json` in the current folder, or takes `--config <file>`. TypeScript needs no build step: Node 22.18+ runs it directly. `import type` is erased, so the config works with `npx` even when mockgen isn't installed in the project.
+- **Hot reload.** Edits to the config are picked up like edits to the spec. A broken config keeps the previous version running.
+- **Without a config file.** The same overrides work in code: `createMockServer({ spec, overrides: { 'GET /health': { body: { status: 'ok' } } } })`.
+
 ### In tests
 
 ```ts
@@ -203,7 +238,7 @@ When you're ready for a real spec, `mockgen infer ./samples -o openapi.yaml` wri
 - [x] Spec corpus of 50+ real-world APIs in CI: every spec loads, and every generated response validates apart from documented spec bugs
 - [x] Docker image for amd64 and arm64
 - [x] Stateful CRUD (`--stateful`)
-- [ ] `mock.config.ts` overrides
+- [x] `mock.config.ts`: option defaults and per-route overrides
 
 ## Quality: the spec corpus
 

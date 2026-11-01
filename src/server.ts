@@ -4,6 +4,7 @@ import { buildPage, findDetailRoute, findListShape, generatedIds, listIdKey } fr
 import { assertLocale, generate } from './generate.js';
 import type { MockModel, MockResponse, MockRoute, Schema } from './model.js';
 import { fits, mergeAllOf, typeOf } from './schema.js';
+import type { RouteContext, RouteOverride } from './config.js';
 import { type CollectionState, MockState } from './state.js';
 
 export interface MockServerOptions {
@@ -24,6 +25,8 @@ export interface MockServerOptions {
    * depends only on the spec, the seed and the request.
    */
   stateful?: boolean;
+  /** Per-route overrides, keyed by `METHOD /path` as in the spec (see `mock.config.ts`). */
+  overrides?: Record<string, RouteOverride>;
 }
 
 export interface MockServer {
@@ -34,6 +37,8 @@ export interface MockServer {
   setModel(model: MockModel): void;
   /** Stateful mode: forget every change, back to the generated data. */
   reset(): void;
+  /** Replace the route overrides, e.g. after the config file changed. */
+  setOverrides(overrides: Record<string, RouteOverride> | undefined): void;
 }
 
 /** Largest request body read in stateful mode. */
@@ -45,6 +50,8 @@ export interface MockResult {
   status: number;
   body: unknown;
   headers: Record<string, string>;
+  /** A route override's delay, in milliseconds. */
+  delay?: number;
 }
 
 const CORS_HEADERS = {
@@ -59,6 +66,7 @@ export function createMockServer(options: MockServerOptions): MockServer {
   let model = options.model;
   const seed = options.seed ?? 1;
   const state = options.stateful ? new MockState() : undefined;
+  let overrides = options.overrides;
 
   const server = http.createServer(async (req, res) => {
     const started = performance.now();
@@ -90,10 +98,11 @@ export function createMockServer(options: MockServerOptions): MockServer {
         records: options.records,
         state,
         body: body.value,
+        overrides,
       });
     }
 
-    const delay = Number(header(req, 'x-mock-delay') ?? url.searchParams.get('__delay') ?? options.delay ?? 0);
+    const delay = Number(header(req, 'x-mock-delay') ?? url.searchParams.get('__delay') ?? result.delay ?? options.delay ?? 0);
     if (delay > 0) await new Promise((r) => setTimeout(r, delay));
 
     const hasBody = result.body !== undefined && method !== 'HEAD' && result.status !== 204 && result.status !== 304;
@@ -130,6 +139,9 @@ export function createMockServer(options: MockServerOptions): MockServer {
     },
     reset() {
       state?.reset();
+    },
+    setOverrides(next) {
+      overrides = next;
     },
   };
 }
@@ -173,10 +185,44 @@ export interface RespondInput {
   state?: MockState;
   /** Stateful mode: the parsed JSON request body. */
   body?: unknown;
+  /** Per-route overrides, keyed by `METHOD /path` as in the spec. */
+  overrides?: Record<string, RouteOverride>;
 }
 
 /** Produce the mock response for one request. Pure apart from the generator's seed, and `state` if given. */
 export function respond(model: MockModel, input: RespondInput): MockResult {
+  if (!input.overrides) return respondFromSpec(model, input);
+  const { route, params } = findRoute(model, input.method, input.path);
+  const override = route && input.overrides[`${route.method} ${route.path}`];
+  if (!override) return respondFromSpec(model, input);
+
+  // A per-request X-Mock-Status wins: the override's status, body and merge are for the normal response.
+  const requestForced = input.status !== undefined;
+  const result = respondFromSpec(model, !requestForced && override.status !== undefined && override.body === undefined ? { ...input, status: override.status } : input);
+  if (!requestForced) {
+    if (override.body !== undefined) {
+      result.body =
+        typeof override.body === 'function'
+          ? override.body({ method: input.method, path: input.path, params, query: new URLSearchParams(input.query ?? ''), body: input.body, seed: input.seed ?? 1 })
+          : structuredClone(override.body);
+      if (override.status !== undefined) result.status = override.status;
+    }
+    if (override.merge && isRecord(result.body)) deepMerge(result.body, override.merge);
+  }
+  if (override.headers) result.headers = { ...result.headers, ...override.headers };
+  if (override.delay !== undefined) result.delay = override.delay;
+  return result;
+}
+
+/** Copy `source` into `target`, merging nested objects and replacing everything else. */
+function deepMerge(target: Record<string, unknown>, source: Record<string, unknown>) {
+  for (const [key, value] of Object.entries(source)) {
+    if (isRecord(value) && isRecord(target[key])) deepMerge(target[key], value);
+    else target[key] = structuredClone(value);
+  }
+}
+
+function respondFromSpec(model: MockModel, input: RespondInput): MockResult {
   const { route, params, pathExists } = findRoute(model, input.method, input.path);
   if (!route) {
     return pathExists
@@ -229,7 +275,8 @@ export function respond(model: MockModel, input: RespondInput): MockResult {
       detailSchema: linked ? detailResponse.schema : undefined,
       detail: linked
         ? (id) => {
-            const r = respond(model, { method: 'GET', path: `${requestPath}/${encodeURIComponent(String(id))}`, seed: input.seed, locale: input.locale });
+            // Overrides apply here too, so a `merge` on the detail route shows up in the list.
+            const r = respond(model, { method: 'GET', path: `${requestPath}/${encodeURIComponent(String(id))}`, seed: input.seed, locale: input.locale, overrides: input.overrides });
             return r.status < 300 && isRecord(r.body) ? r.body : undefined;
           }
         : undefined,
