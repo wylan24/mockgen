@@ -169,3 +169,16 @@ describe('stateless mode (the default)', () => {
     }
   });
 });
+
+describe('stateful mode: people', () => {
+  it('keeps email and username matching a changed name, unless the body sets them', async () => {
+    const petstore = await loadOpenApi('examples/petstore.yaml');
+    const state = new MockState();
+    const post = (body: unknown) => respond(petstore, { method: 'POST', path: '/users', seed: 1, state, body }).body as Record<string, string>;
+    const zoe = post({ firstName: 'Zoë', lastName: 'Müller' });
+    expect(zoe.email).toMatch(/^zoe\.muller@[\w.-]+$/);
+    expect(zoe.username).toBe('zoe.muller');
+    const ada = post({ firstName: 'Ada', email: 'ada@corp.example' });
+    expect(ada.email).toBe('ada@corp.example');
+  });
+});

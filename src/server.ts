@@ -3,6 +3,7 @@ import type { AddressInfo } from 'node:net';
 import { buildPage, findDetailRoute, findListShape, generatedIds, listIdKey } from './collections.js';
 import { assertLocale, generate } from './generate.js';
 import type { MockModel, MockResponse, MockRoute, Schema } from './model.js';
+import { normalizeName } from './heuristics.js';
 import { fits, mergeAllOf, typeOf } from './schema.js';
 import type { RouteContext, RouteOverride } from './config.js';
 import { type CollectionState, MockState } from './state.js';
@@ -400,10 +401,44 @@ function newId(collection: Collection, generated: unknown, n: number, input: Sta
 function mergeBody(record: Record<string, unknown>, body: unknown, collection: Collection) {
   if (!isRecord(body)) return;
   const props = propsOf(collection.recordSchema);
+  let renamed = false;
   for (const [key, value] of Object.entries(body)) {
     const s = props[key];
     if (key === collection.idKey || !s || s.readOnly) continue;
-    if (fits(value, s)) record[key] = structuredClone(value);
+    if (fits(value, s)) {
+      record[key] = structuredClone(value);
+      if (PERSON_NAME.test(normalizeName(key))) renamed = true;
+    }
+  }
+  if (renamed) matchIdentity(record, body, props);
+}
+
+const PERSON_NAME = /^(firstname|givenname|lastname|surname|familyname|name|fullname|displayname)$/;
+
+/**
+ * After a person's name changed, keep their email and username matching it, as
+ * generated records do: Ada Lovelace becomes ada.lovelace@<the same domain>. Fields
+ * the body set itself are left alone, and so is anything the new value wouldn't fit.
+ */
+function matchIdentity(record: Record<string, unknown>, body: Record<string, unknown>, props: Record<string, Schema>) {
+  const keyOf = (re: RegExp) => Object.keys(record).find((k) => re.test(normalizeName(k)));
+  const text = (k: string | undefined) => (k && typeof record[k] === 'string' ? (record[k] as string) : '');
+  let first = text(keyOf(/^(firstname|givenname)$/));
+  let last = text(keyOf(/^(lastname|surname|familyname)$/));
+  if (!first || !last) {
+    const [head = '', ...tail] = text(keyOf(/^(name|fullname|displayname)$/)).trim().split(/\s+/);
+    first ||= head;
+    last ||= tail.join(' ');
+  }
+  // ASCII only: "Zoë Müller" becomes zoe.muller.
+  const slug = (s: string) => s.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.|\.$/g, '');
+  const local = [slug(first), slug(last)].filter(Boolean).join('.');
+  if (!local) return;
+  for (const [key, current] of Object.entries(record)) {
+    if (key in body || typeof current !== 'string') continue;
+    const n = normalizeName(key);
+    const value = /email/.test(n) && current.includes('@') ? `${local}@${current.split('@').pop()}` : /^(username|login|handle)$/.test(n) ? local : undefined;
+    if (value !== undefined && fits(value, props[key])) record[key] = value;
   }
 }
 

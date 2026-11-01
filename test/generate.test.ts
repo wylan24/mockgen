@@ -122,3 +122,30 @@ describe('name heuristics', () => {
     expect(nameIn('project')).toMatch(/^[a-z]+(-[a-z]+)+$/);
   });
 });
+
+describe('titles and signed numbers', () => {
+  const titleIn = (props: Record<string, object>, seed = 1) =>
+    (generate({ type: 'object', required: ['title', ...Object.keys(props)], properties: { title: { type: 'string' }, ...props } }, { seed }) as { title: string }).title;
+
+  it('gives titles that fit the record instead of placeholder Latin', () => {
+    const task = titleIn({ status: { type: 'string' }, assignee: { type: 'string' } });
+    expect(task).toMatch(/^[A-Z][a-z-]+ [a-z-]+ [a-z-]+$/); // "Calculate optical protocol"
+    expect(task).not.toMatch(/\b(lorem|ipsum|dolor|amet)\b/i);
+    expect(titleIn({ price: { type: 'number' } })).not.toBe(task);
+    expect(titleIn({ isbn: { type: 'string' } })).not.toBe(task);
+  });
+
+  it('lets naturally signed numbers go negative', () => {
+    const values = (name: string) =>
+      Array.from({ length: 40 }, (_, seed) => (generate({ type: 'object', required: [name], properties: { [name]: { type: 'number' } } }, { seed }) as Record<string, number>)[name]!);
+    for (const name of ['balance', 'latitude', 'temperatureCelsius', 'priceChange']) expect(values(name).some((v) => v < 0), name).toBe(true);
+    expect(values('price').every((v) => v >= 0)).toBe(true);
+  });
+
+  it('keeps signed numbers within the schema', () => {
+    for (let seed = 0; seed < 40; seed++) {
+      const { balance } = generate({ type: 'object', required: ['balance'], properties: { balance: { type: 'integer', minimum: 0 } } }, { seed }) as { balance: number };
+      expect(balance).toBeGreaterThanOrEqual(0);
+    }
+  });
+});

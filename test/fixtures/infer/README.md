@@ -21,7 +21,7 @@ Each folder holds a `samples/` folder and the OpenAPI that `mockgen infer` shoul
 | 11-numeric-strings | digit-only strings (zip codes) never become an enum |
 | 12-many-distinct-values | unique values (SKUs), and more than 8 distinct values: no enum |
 | 13-integer-and-float | integers and floats in one field widen to `number` |
-| 14-negative-numbers | any negative value drops `minimum: 0` |
+| 14-negative-numbers | any negative value drops `minimum: 0`; names like `lat` and `balance` never get it (see also 15) |
 | 15-nested-objects | objects inside objects, three levels deep |
 | 16-top-level-array | a list response: item keys missing from some items are optional |
 | 17-empty-arrays | an always-empty array (`items: {}`), and one that is empty in some samples |

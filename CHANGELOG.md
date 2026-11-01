@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Changed
+
+These change generated data for the fields involved, so snapshots of those fields will change once.
+
+- `title`, `headline` and `subject` fit their record: a product name next to `price` or `sku`, a job title in a job posting, a book title next to `author` or `isbn`, and otherwise a short English phrase ("Calculate optical protocol") instead of Latin placeholder text.
+- Numbers that can naturally be negative (`balance`, `profit`, `change`/`delta`, temperatures) sometimes are, within the schema's limits. Inference no longer adds `minimum: 0` to them, or to `lat`/`lng`, `offset`, `elevation` and similar, just because the samples happened to be positive.
+- Stateful mode: when a request changes a person's name, their email and username follow it (Zoë Müller becomes `zoe.muller@<same domain>`), unless the request sets them too.
+
 ## [0.1.0-alpha.7] - 2026-11-01
 
 ### Added
