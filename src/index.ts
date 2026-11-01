@@ -9,6 +9,7 @@ export { loadOpenApi, SpecLoadError } from './openapi.js';
 export { formatOpenApi, loadSamples, parseSampleName, toOpenApi } from './samples.js';
 export { ResponseValidator, toJsonSchema, type ValidationResult } from './validate.js';
 export { respond, type MockResult, type MockServer, type MockServerOptions, type RespondInput } from './server.js';
+export { MockState } from './state.js';
 
 /**
  * Create a mock server from a spec path, a sample folder, or an already-loaded model.

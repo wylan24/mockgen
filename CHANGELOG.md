@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- Stateful mode (`--stateful`, or `stateful: true` in `createMockServer()`). POST creates records, PUT/PATCH update them and DELETE removes them, and detail routes, lists, totals and paging reflect the changes. Unknown ids get the spec's 404. Reset with `POST /__mockgen/reset` or `mock.reset()`. The default stays stateless and unchanged.
+
 ## [0.1.0-alpha.5] - 2026-11-01
 
 ### Added

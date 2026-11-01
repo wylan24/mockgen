@@ -1,0 +1,105 @@
+openapi: 3.1.0
+info: { title: Stateful fixture, version: 1.0.0 }
+paths:
+  /items:
+    get:
+      responses:
+        '200':
+          description: A page of items
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, total]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Item' } }
+                  total: { type: integer, minimum: 0 }
+    post:
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Item' }
+  /items/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    get:
+      responses:
+        '200':
+          description: One item
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Item' }
+        '404':
+          description: No such item
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    put:
+      responses:
+        '200':
+          description: Replaced
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Item' }
+    patch:
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Item' }
+    delete:
+      responses:
+        '204': { description: Deleted }
+  /tags:
+    get:
+      responses:
+        '200':
+          description: Tags
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Tag' } }
+    post:
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tag' }
+  /tags/{tagId}:
+    parameters:
+      - { name: tagId, in: path, required: true, schema: { type: string } }
+    get:
+      responses:
+        '200':
+          description: One tag
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tag' }
+    delete:
+      responses:
+        '204': { description: Deleted }
+components:
+  schemas:
+    Item:
+      type: object
+      required: [id, name, done, priority, createdAt]
+      properties:
+        id: { type: integer, minimum: 1 }
+        name: { type: string, maxLength: 40 }
+        done: { type: boolean }
+        priority: { type: string, enum: [low, high] }
+        createdAt: { type: string, format: date-time, readOnly: true }
+    Tag:
+      type: object
+      required: [id, label]
+      properties:
+        id: { type: string, format: uuid }
+        label: { type: string }
+    Error:
+      type: object
+      required: [code]
+      properties:
+        code: { type: string }

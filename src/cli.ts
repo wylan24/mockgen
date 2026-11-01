@@ -29,6 +29,8 @@ Options
   -l, --locale <code> Language and region for names, addresses and text, e.g. de, ja,
                       pt_BR (default en)
   -o, --out <file>    infer: write here instead of stdout (.yaml or .json)
+      --stateful      Remember changes: POST creates, PUT/PATCH update, DELETE removes
+                      (reset with POST /__mockgen/reset)
       --no-watch      Disable hot reload
   -h, --help          Show this help
   -v, --version       Show the version
@@ -53,6 +55,7 @@ async function main(argv: string[]) {
       records: { type: 'string', short: 'r', default: '50' },
       locale: { type: 'string', short: 'l' },
       watch: { type: 'boolean', default: true },
+      stateful: { type: 'boolean', default: false },
       help: { type: 'boolean', short: 'h' },
       version: { type: 'boolean', short: 'v' },
     },
@@ -74,7 +77,7 @@ async function main(argv: string[]) {
   }
   switch (command) {
     case 'serve':
-      return serve(spec, { port: int(values.port, '--port'), host: values.host, seed, delay: int(values.delay.replace(/ms$/, ''), '--delay'), watch: values.watch, records: int(values.records, '--records'), locale });
+      return serve(spec, { port: int(values.port, '--port'), host: values.host, seed, delay: int(values.delay.replace(/ms$/, ''), '--delay'), watch: values.watch, records: int(values.records, '--records'), locale, stateful: values.stateful });
     case 'generate':
       return generateCmd(spec, rest.join(' '), seed, int(values.records, '--records'), locale);
     case 'validate':
@@ -86,11 +89,11 @@ async function main(argv: string[]) {
   }
 }
 
-async function serve(spec: string, opts: { port: number; host: string; seed: number; delay: number; watch: boolean; records: number; locale?: string }) {
+async function serve(spec: string, opts: { port: number; host: string; seed: number; delay: number; watch: boolean; records: number; locale?: string; stateful: boolean }) {
   const started = performance.now();
   const model = await loadSource(spec);
   printWarnings(model);
-  const mock = createMockServer({ model, seed: opts.seed, delay: opts.delay, records: opts.records, locale: opts.locale, log: (line) => console.log(styleText('dim', line)) });
+  const mock = createMockServer({ model, seed: opts.seed, delay: opts.delay, records: opts.records, locale: opts.locale, stateful: opts.stateful, log: (line) => console.log(styleText('dim', line)) });
   const url = await mock.listen(opts.port, opts.host).catch((err: NodeJS.ErrnoException) => {
     if (err.code === 'EADDRINUSE') fail(`Port ${opts.port} is already in use on ${opts.host}. Pick another with --port ${opts.port + 1}, or --port 0 for any free port.`);
     if (err.code === 'EACCES') fail(`No permission to use port ${opts.port} on ${opts.host}. Ports below 1024 usually need admin rights; try --port 4010.`);
@@ -114,7 +117,7 @@ async function serve(spec: string, opts: { port: number; host: string; seed: num
 
   console.log(`\n${styleText('bold', model.title)} ${styleText('dim', model.version)}`);
   for (const r of model.routes) console.log(`  ${styleText('cyan', r.method.padEnd(7))} ${url}${model.basePath}${r.path}`);
-  console.log(`\n${styleText('green', '✔')} Mock server ready at ${styleText('bold', url)} in ${Math.round(performance.now() - started)}ms (seed ${opts.seed})\n`);
+  console.log(`\n${styleText('green', '✔')} Mock server ready at ${styleText('bold', url)} in ${Math.round(performance.now() - started)}ms (seed ${opts.seed}${opts.stateful ? ', stateful' : ''})\n`);
 
   const shutdown = () => mock.close().then(() => process.exit(0));
   process.once('SIGINT', shutdown);

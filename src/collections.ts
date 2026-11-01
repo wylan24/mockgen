@@ -2,6 +2,7 @@ import { generate } from './generate.js';
 import { fits, mergeAllOf, typeOf } from './schema.js';
 import { normalizeName } from './heuristics.js';
 import type { MockRoute, Schema } from './model.js';
+import type { CollectionState } from './state.js';
 
 // List endpoints are treated as windows onto a fixed, seeded collection:
 // record i always has the same data, `?page=2` shows records 10–19, and when a
@@ -90,23 +91,53 @@ export interface BuildPageInput {
   detail?: (id: unknown) => Record<string, unknown> | undefined;
   /** The detail route's schema; fields it shares with the item need no re-check. */
   detailSchema?: Schema;
+  /** Stateful mode: drop deleted records and append created ones. */
+  state?: CollectionState;
+}
+
+/** The property that identifies a list item: the detail route's param name if the item has it, else `id`. */
+export function listIdKey(itemSchema: Schema, paramName?: string): string | undefined {
+  const props: Record<string, Schema> = (itemSchema.allOf ? mergeAllOf(itemSchema) : itemSchema).properties ?? {};
+  return paramName && paramName in props ? paramName : 'id' in props ? 'id' : undefined;
+}
+
+/** Ids of the generated records in a collection, in order. Cached on the collection's state. */
+export function generatedIds(state: CollectionState, itemSchema: Schema, idKey: string, total: number, requestPath: string, seed?: number, locale?: string): unknown[] {
+  if (state.baseIds?.length !== total) {
+    const idSchema = ((itemSchema.allOf ? mergeAllOf(itemSchema) : itemSchema).properties ?? {})[idKey]!;
+    state.baseIds = Array.from({ length: total }, (_, i) => recordId(idSchema, i, seed, `${requestPath}#${i}`, locale));
+  }
+  return state.baseIds;
 }
 
 export function buildPage(input: BuildPageInput): { body: unknown; headers: Record<string, string> } {
-  const { shape, query, total } = input;
-  const win = readPage(query, shape.arraySchema, total);
+  const { shape, query } = input;
   const item = shape.itemSchema.allOf ? mergeAllOf(shape.itemSchema) : shape.itemSchema;
   const props: Record<string, Schema> = item.properties ?? {};
-  const idKey = input.idKey && input.idKey in props ? input.idKey : 'id' in props ? 'id' : undefined;
+  const idKey = listIdKey(shape.itemSchema, input.idKey);
+
+  // The collection, in order: generated record i, or a record created with POST.
+  let slots: (number | Record<string, unknown>)[] | undefined;
+  if (input.state) {
+    const ids = idKey ? generatedIds(input.state, shape.itemSchema, idKey, input.total, input.requestPath, input.seed, input.locale) : undefined;
+    slots = [];
+    for (let i = 0; i < input.total; i++) if (!ids || !input.state.deleted.has(String(ids[i]))) slots.push(i);
+    slots.push(...input.state.created.values());
+  }
+  const total = slots ? slots.length : input.total;
+  const win = readPage(query, shape.arraySchema, total);
 
   const items: unknown[] = [];
   const required = new Set<string>(item.required ?? []);
   const projectable = !item.oneOf && !item.anyOf && !!item.properties;
   const detailProps: Record<string, Schema> = (input.detailSchema?.allOf ? mergeAllOf(input.detailSchema) : input.detailSchema)?.properties ?? {};
-  for (let i = win.offset; i < Math.min(total, win.offset + win.limit); i++) {
-    const key = `${input.requestPath}#${i}`;
-    const id = idKey ? recordId(props[idKey]!, i, input.seed, key, input.locale) : undefined;
-    const detail = id !== undefined ? input.detail?.(id) : undefined;
+  for (let n = win.offset; n < Math.min(total, win.offset + win.limit); n++) {
+    const slot = slots ? slots[n]! : n;
+    // A record created with POST stands in for the detail record; a changed one overrides it.
+    const created = typeof slot === 'number' ? undefined : slot;
+    const key = created ? `${input.requestPath}#created${n}` : `${input.requestPath}#${slot}`;
+    const id = !idKey ? undefined : created ? created[idKey] : (input.state?.baseIds?.[slot as number] ?? recordId(props[idKey]!, slot as number, input.seed, key, input.locale));
+    const detail = created ?? (id !== undefined ? (input.state?.updated.get(String(id)) ?? input.detail?.(id)) : undefined);
     if (detail && !projectable) {
       // Items that are a oneOf/anyOf can't be projected field by field: generate, then overlay.
       const record = generate(shape.itemSchema, { seed: input.seed, locale: input.locale, key }) as Record<string, unknown>;

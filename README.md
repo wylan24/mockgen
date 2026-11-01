@@ -93,6 +93,7 @@ mockgen infer <dir> [-o openapi.yaml]  # Write the schema inferred from samples 
 | `-d, --delay` | `0` | Delay every response, e.g. `300ms` |
 | `-r, --records` | `50` | Records in every list endpoint's collection |
 | `-l, --locale` | `en` | Language and region for names, addresses and phone numbers, e.g. `de`, `ja`, `pt_BR` |
+| `--stateful` | off | Remember changes: POST creates, PUT/PATCH update, DELETE removes (see [Stateful mode](#stateful-mode)) |
 | `--no-watch` | | Disable hot reload |
 | `-o, --out` | stdout | `infer` output file (`.yaml` or `.json`) |
 
@@ -131,6 +132,31 @@ curl 'localhost:4010/users?cursor=bzoyMA'     # any cursor mockgen handed out wo
 - Responses carry `X-Total-Count` and a `Link` header with `next`/`prev`.
 
 A page past the end is empty, even if the schema sets `minItems`.
+
+### Stateful mode
+
+By default every response depends only on the spec, the seed and the request, so a POST doesn't change what a GET returns. To build forms and flows that create, edit and delete things, turn on stateful mode:
+
+```bash
+mockgen serve ./openapi.yaml --stateful
+```
+
+```bash
+curl -X POST localhost:4010/users -H 'content-type: application/json' -d '{"firstName":"Ada"}'
+# 201, {"id": 51, "firstName": "Ada", ...}, Location: /users/51
+curl localhost:4010/users/51            # the same record
+curl -X PATCH localhost:4010/users/51 -H 'content-type: application/json' -d '{"lastName":"Lovelace"}'
+curl -X DELETE localhost:4010/users/7   # then GET /users/7 is a 404, and /users has 49 records
+```
+
+- **Create.** POST to a list path creates a record: generated from the schema, with your fields on top. It gets the next id (51, 52, … for integer ids; a fresh generated one otherwise), and appears in the detail route and at the end of the list.
+- **Update and delete.** PUT and PATCH merge your fields into the record. DELETE removes it. Lists, totals and paging reflect both.
+- **Not found.** Ids that aren't in the collection get the spec's 404, like a real API.
+- **Always valid.** Fields that don't fit the schema, unknown fields, read-only fields and the id are ignored, so responses stay valid. Fields you set don't regenerate related ones: a user created with a new name keeps its generated email.
+- **Reset.** `POST /__mockgen/reset` (or `mock.reset()`) goes back to the generated data. So does a spec reload. Changes live in memory and are lost when the server stops.
+- **Deterministic.** The same requests in the same order give the same results. `X-Mock-Status` still simulates errors, without changing anything.
+
+In tests: `createMockServer({ spec, stateful: true })`, and call `mock.reset()` in `beforeEach`.
 
 ### In tests
 
@@ -176,7 +202,8 @@ When you're ready for a real spec, `mockgen infer ./samples -o openapi.yaml` wri
 - [x] List/detail consistency (`/users/{id}` returns the user from `/users`) and pagination
 - [x] Spec corpus of 50+ real-world APIs in CI: every spec loads, and every generated response validates apart from documented spec bugs
 - [x] Docker image for amd64 and arm64
-- [ ] Stateful CRUD and `mock.config.ts` overrides
+- [x] Stateful CRUD (`--stateful`)
+- [ ] `mock.config.ts` overrides
 
 ## Quality: the spec corpus
 
