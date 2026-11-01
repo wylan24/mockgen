@@ -30,6 +30,35 @@ npm install --save-dev @wylan24/mockgen
 npx mockgen serve ./openapi.yaml
 ```
 
+### Docker
+
+No Node needed. Mount the folder with your spec at `/api`. By default the container serves `/api/openapi.yaml`:
+
+```bash
+docker run --rm -p 4010:4010 -v "$PWD:/api" ghcr.io/wylan24/mockgen
+```
+
+Any other command or option works as usual, for example:
+
+```bash
+docker run --rm -p 4010:4010 -v "$PWD:/api" ghcr.io/wylan24/mockgen serve /api/spec.json --seed 2
+```
+
+- **Platforms.** Images are published for `linux/amd64` and `linux/arm64` (Apple silicon, Graviton), tagged by version (`0.1.0-alpha.5`), with `latest` and `next` matching npm's dist-tags.
+- **Host.** The image sets `MOCKGEN_HOST=0.0.0.0`, so the server is reachable from outside the container without `--host`.
+- **Non-root.** It runs as the unprivileged `node` user. The mounted spec only needs to be readable.
+- **Docker Compose.** Add it as a service next to your app:
+
+  ```yaml
+  services:
+    api:
+      image: ghcr.io/wylan24/mockgen:0.1.0-alpha.5
+      ports: ['4010:4010']
+      volumes: ['./openapi.yaml:/api/openapi.yaml:ro']
+  ```
+
+Hot reload works when the container sees file changes on the mount. Some Docker Desktop setups don't pass them through; if edits don't show up, restart the container.
+
 ## Guides and examples
 
 - [Getting started](docs/guides/getting-started.md): from a spec to a running mock in five minutes
@@ -146,7 +175,8 @@ When you're ready for a real spec, `mockgen infer ./samples -o openapi.yaml` wri
 - [x] Sample-response input (folder of JSON files → inferred schema) and `mockgen infer`
 - [x] List/detail consistency (`/users/{id}` returns the user from `/users`) and pagination
 - [x] Spec corpus of 50+ real-world APIs in CI: every spec loads, and every generated response validates apart from documented spec bugs
-- [ ] Stateful CRUD, `mock.config.ts` overrides, Docker image
+- [x] Docker image for amd64 and arm64
+- [ ] Stateful CRUD and `mock.config.ts` overrides
 
 ## Quality: the spec corpus
 

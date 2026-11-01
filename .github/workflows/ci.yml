@@ -44,6 +44,39 @@ jobs:
       - run: npm ci
       - run: npm run smoke
 
+  docker:
+    # Build the image the release publishes and run it the way the README says to.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - name: Build (amd64, loaded for the checks below)
+        run: docker buildx build --platform linux/amd64 --load -t mockgen:ci .
+      - name: Build (arm64)
+        run: docker buildx build --platform linux/arm64 -t mockgen:ci-arm64 .
+      - name: Serves a mounted spec from outside the container
+        run: |
+          docker run -d --name mock -p 4010:4010 -v "$PWD/examples:/api:ro" mockgen:ci serve /api/petstore.yaml
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:4010/users/42 > /dev/null && break; sleep 1; done
+          curl -sf http://127.0.0.1:4010/users/42 | grep -q '"id": 42'
+          test "$(curl -s -o /dev/null -w '%{http_code}' -H 'X-Mock-Status: 404' http://127.0.0.1:4010/users/42)" = 404
+          docker logs mock
+      - name: Runs as a non-root user
+        run: test "$(docker exec mock id -u)" != 0
+      - name: Stops promptly on docker stop
+        run: |
+          start=$(date +%s)
+          docker stop -t 10 mock
+          test $(( $(date +%s) - start )) -lt 5
+      - name: Default command serves /api/openapi.yaml
+        run: |
+          mkdir -p /tmp/api && cp examples/react-vite/api/openapi.yaml /tmp/api/
+          docker run -d --name default -p 4011:4010 -v /tmp/api:/api:ro mockgen:ci
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:4011/tasks/3 > /dev/null && break; sleep 1; done
+          curl -sf http://127.0.0.1:4011/tasks/3 | grep -q '"id": 3'
+          docker run --rm mockgen:ci --version
+
   corpus:
     # The release gate: 50+ real-world specs must load (≥95%) and every generated
     # response must validate, apart from the spec bugs listed in corpus/baseline.json.

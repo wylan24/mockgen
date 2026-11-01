@@ -1,0 +1,7 @@
+# Only package.json, the lockfile, the tsconfigs and src/ go into the image build.
+*
+!package.json
+!package-lock.json
+!tsconfig.json
+!tsconfig.build.json
+!src/
