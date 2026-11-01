@@ -1,9 +1,10 @@
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { buildPage, findDetailRoute, findListShape } from './collections.js';
+import { buildPage, findDetailRoute, findListShape, generatedIds, listIdKey } from './collections.js';
 import { assertLocale, generate } from './generate.js';
 import type { MockModel, MockResponse, MockRoute, Schema } from './model.js';
-import { fits, mergeAllOf } from './schema.js';
+import { fits, mergeAllOf, typeOf } from './schema.js';
+import { type CollectionState, MockState } from './state.js';
 
 export interface MockServerOptions {
   model: MockModel;
@@ -17,15 +18,28 @@ export interface MockServerOptions {
   locale?: string;
   /** Called once per request with a one-line summary. */
   log?: (line: string) => void;
+  /**
+   * Remember changes: POST creates records, PUT/PATCH change them, DELETE removes
+   * them, and lists and detail routes reflect that. Default false: every response
+   * depends only on the spec, the seed and the request.
+   */
+  stateful?: boolean;
 }
 
 export interface MockServer {
   server: http.Server;
   listen(port?: number, host?: string): Promise<string>;
   close(): Promise<void>;
-  /** Swap the model in place, e.g. after the spec changed on disk. */
+  /** Swap the model in place, e.g. after the spec changed on disk. Resets stateful changes. */
   setModel(model: MockModel): void;
+  /** Stateful mode: forget every change, back to the generated data. */
+  reset(): void;
 }
+
+/** Largest request body read in stateful mode. */
+const MAX_BODY_BYTES = 1024 * 1024;
+/** Stateful mode: `POST` here forgets every change. */
+export const RESET_PATH = '/__mockgen/reset';
 
 export interface MockResult {
   status: number;
@@ -44,15 +58,25 @@ export function createMockServer(options: MockServerOptions): MockServer {
   if (options.locale) assertLocale(options.locale);
   let model = options.model;
   const seed = options.seed ?? 1;
+  const state = options.stateful ? new MockState() : undefined;
 
   const server = http.createServer(async (req, res) => {
     const started = performance.now();
     const url = new URL(req.url ?? '/', 'http://localhost');
     const method = (req.method ?? 'GET').toUpperCase();
-    req.resume(); // Request bodies are not used yet; drain them.
+
+    // Bodies only matter in stateful mode; otherwise drain them.
+    let body: { value?: unknown; error?: MockResult } = {};
+    if (state && (method === 'POST' || method === 'PUT' || method === 'PATCH')) body = await readJsonBody(req);
+    else req.resume();
 
     let result: MockResult;
-    if (method === 'OPTIONS' && !findRoute(model, 'OPTIONS', url.pathname).route) {
+    if (body.error) {
+      result = body.error;
+    } else if (state && method === 'POST' && url.pathname === RESET_PATH) {
+      state.reset();
+      result = { status: 204, body: undefined, headers: {} };
+    } else if (method === 'OPTIONS' && !findRoute(model, 'OPTIONS', url.pathname).route) {
       result = { status: 204, body: undefined, headers: {} };
     } else {
       result = respond(model, {
@@ -64,6 +88,8 @@ export function createMockServer(options: MockServerOptions): MockServer {
         query: url.searchParams,
         origin: req.headers.host ? `http://${req.headers.host}` : undefined,
         records: options.records,
+        state,
+        body: body.value,
       });
     }
 
@@ -100,8 +126,33 @@ export function createMockServer(options: MockServerOptions): MockServer {
     },
     setModel(next) {
       model = next;
+      state?.reset();
+    },
+    reset() {
+      state?.reset();
     },
   };
+}
+
+/** Read a JSON request body: `value` is undefined for an empty body; `error` is a 400 or 413 to send instead. */
+async function readJsonBody(req: http.IncomingMessage): Promise<{ value?: unknown; error?: MockResult }> {
+  const chunks: Buffer[] = [];
+  let size = 0;
+  for await (const chunk of req as AsyncIterable<Buffer>) {
+    size += chunk.length;
+    if (size > MAX_BODY_BYTES) {
+      req.resume();
+      return { error: errorResult(413, `Request body is larger than ${MAX_BODY_BYTES} bytes`) };
+    }
+    chunks.push(chunk);
+  }
+  const text = Buffer.concat(chunks).toString('utf8').trim();
+  if (!text) return {};
+  try {
+    return { value: JSON.parse(text) };
+  } catch {
+    return { error: errorResult(400, 'Request body is not valid JSON') };
+  }
 }
 
 export interface RespondInput {
@@ -118,9 +169,13 @@ export interface RespondInput {
   records?: number;
   /** Faker locale, e.g. `de`. Default `en`. */
   locale?: string;
+  /** Stateful mode: the changes so far. `respond()` records this request's changes in it. */
+  state?: MockState;
+  /** Stateful mode: the parsed JSON request body. */
+  body?: unknown;
 }
 
-/** Produce the mock response for one request. Pure apart from the generator's seed. */
+/** Produce the mock response for one request. Pure apart from the generator's seed, and `state` if given. */
 export function respond(model: MockModel, input: RespondInput): MockResult {
   const { route, params, pathExists } = findRoute(model, input.method, input.path);
   if (!route) {
@@ -132,6 +187,12 @@ export function respond(model: MockModel, input: RespondInput): MockResult {
   const forced = input.status !== undefined ? Number(input.status) : undefined;
   if (forced !== undefined && !(forced >= 100 && forced <= 599)) {
     return errorResult(400, `X-Mock-Status must be an HTTP status code, got "${input.status}"`);
+  }
+
+  // A forced status is only a simulation: it never changes state.
+  if (input.state && forced === undefined) {
+    const result = respondStateful(model, { ...input, state: input.state }, route, params);
+    if (result) return result;
   }
 
   const response = pickResponse(route.responses, forced);
@@ -160,6 +221,7 @@ export function respond(model: MockModel, input: RespondInput): MockResult {
       origin: input.origin,
       seed: input.seed,
       locale: input.locale,
+      state: input.state?.collection(requestPath),
       shape,
       body,
       total: input.records ?? 50,
@@ -176,6 +238,152 @@ export function respond(model: MockModel, input: RespondInput): MockResult {
 
   if (isRecord(body) && response.schema) applyPathParams(body, response.schema, route, params);
   return { status, body, headers };
+}
+
+// Stateful mode ---------------------------------------------------------------
+//
+// A collection is a list path (`/users`) and its detail routes (`/users/{id}`).
+// POST to the list path creates a record; PUT/PATCH/DELETE/GET on a detail path
+// act on one. Records are stored whole, in the shape of the detail response (or
+// the list item), and every response is projected from them onto its own schema,
+// so responses stay valid. Request fields that don't fit the schema are ignored.
+
+interface Collection {
+  /** Concrete path, e.g. `/users` or `/users/3/posts`. */
+  path: string;
+  state: CollectionState;
+  /** Shape of one stored record: the detail response, else the list item. */
+  recordSchema: Schema;
+  idKey?: string;
+  /** Ids of the generated records, when a list route makes them enumerable. */
+  ids?: unknown[];
+  detailRoute?: MockRoute;
+}
+
+type StatefulInput = RespondInput & { state: MockState };
+
+/** Handle a request in stateful mode; undefined means respond as usual. */
+function respondStateful(model: MockModel, input: StatefulInput, route: MockRoute, params: Record<string, string>): MockResult | undefined {
+  const path = input.path.replace(/(.)\/$/, '$1');
+  if (!route.path.endsWith('}')) return route.method === 'POST' ? create(model, input, route, path) : undefined;
+  if (!['GET', 'PUT', 'PATCH', 'DELETE'].includes(route.method)) return undefined;
+
+  const template = route.path.slice(0, route.path.lastIndexOf('/'));
+  const collection = collectionFor(model, input, template, path.slice(0, path.lastIndexOf('/')) || '/');
+  if (!collection) return undefined;
+  const { state } = collection;
+  const id = params[route.paramNames.at(-1)!]!;
+  const created = state.created.get(id);
+  const exists = !!created || (!state.deleted.has(id) && (!collection.ids || collection.ids.some((x) => String(x) === id)));
+  if (!exists) return respond(model, { ...input, state: undefined, body: undefined, status: 404 });
+  const stored = created ?? state.updated.get(id);
+
+  if (route.method === 'GET') return stored ? success(route, stored, input) : undefined;
+  if (route.method === 'DELETE') {
+    const record = stored ?? generatedRecord(model, input, collection, path);
+    if (created) state.created.delete(id);
+    else {
+      state.deleted.add(id);
+      state.updated.delete(id);
+    }
+    return success(route, record, input);
+  }
+  // PUT and PATCH both merge the body's fields into the record.
+  if (input.body !== undefined && !isRecord(input.body)) return errorResult(400, 'Request body must be a JSON object');
+  const next = structuredClone(stored ?? generatedRecord(model, input, collection, path));
+  mergeBody(next, input.body, collection);
+  (created ? state.created : state.updated).set(id, next);
+  return success(route, next, input);
+}
+
+function create(model: MockModel, input: StatefulInput, route: MockRoute, path: string): MockResult | undefined {
+  const collection = collectionFor(model, input, route.path, path);
+  if (!collection) return undefined;
+  if (input.body !== undefined && !isRecord(input.body)) return errorResult(400, 'Request body must be a JSON object');
+  const { state, recordSchema, idKey } = collection;
+  const n = state.creates;
+  const record = generate(recordSchema, { seed: input.seed, locale: input.locale, key: `POST ${path} #${n}` });
+  if (!isRecord(record)) return undefined;
+  state.creates++;
+  mergeBody(record, input.body, collection);
+  const id = idKey ? newId(collection, record[idKey], n, input) : `#${n}`;
+  if (idKey) record[idKey] = id;
+  state.created.set(String(id), record);
+
+  const result = success(route, record, input);
+  if (idKey && collection.detailRoute && result.status < 300) result.headers.location = `${path}/${encodeURIComponent(String(id))}`;
+  return result;
+}
+
+/** The collection a request belongs to, from its list path template (`/users/{id}/posts`) and concrete path. */
+function collectionFor(model: MockModel, input: StatefulInput, template: string, path: string): Collection | undefined {
+  const listRoute = model.routes.find((r) => r.method === 'GET' && r.path === template);
+  const listResponse = listRoute && pickResponse(listRoute.responses);
+  const shape = listResponse && !listResponse.hasExample ? findListShape(listResponse.schema) : undefined;
+  const detailRoute = findDetailRoute(model.routes, { path: template } as MockRoute);
+  const detailResponse = detailRoute && pickResponse(detailRoute.responses);
+  const recordSchema = (detailResponse && !detailResponse.hasExample ? detailResponse.schema : undefined) ?? shape?.itemSchema;
+  if (!recordSchema || !(typeOf(recordSchema) === 'object' || recordSchema.allOf)) return undefined;
+
+  const state = input.state.collection(path);
+  const idKey = listIdKey(shape?.itemSchema ?? recordSchema, detailRoute?.paramNames.at(-1));
+  const ids = shape && idKey ? generatedIds(state, shape.itemSchema, idKey, input.records ?? 50, path, input.seed, input.locale) : undefined;
+  return { path, state, recordSchema, idKey, ids, detailRoute };
+}
+
+/** The next free id: one past the largest for numeric ids, else a generated one that isn't taken. */
+function newId(collection: Collection, generated: unknown, n: number, input: StatefulInput): unknown {
+  const idSchema = propsOf(collection.recordSchema)[collection.idKey!];
+  if (!idSchema) return generated;
+  const created = [...collection.state.created.values()].map((r) => r[collection.idKey!]);
+  const t = typeOf(idSchema);
+  if (t === 'integer' || t === 'number') {
+    const min = Math.max(1, Math.ceil(idSchema?.minimum ?? 1));
+    // Without a list route the generated ids aren't known; assume the usual 1…records.
+    const taken = [...(collection.ids ?? [min + (input.records ?? 50) - 1]), ...created].filter((x): x is number => typeof x === 'number');
+    return taken.length ? Math.max(...taken) + 1 : min;
+  }
+  const taken = new Set([...(collection.ids ?? []), ...created].map(String));
+  let id = generated;
+  for (let k = 1; taken.has(String(id)) && k < 100; k++) id = generate(idSchema, { seed: input.seed, locale: input.locale, key: `POST ${collection.path} #${n}.id${k}` });
+  return id;
+}
+
+/** Copy the body's fields onto the record, skipping the id, read-only fields, and fields that don't fit the schema. */
+function mergeBody(record: Record<string, unknown>, body: unknown, collection: Collection) {
+  if (!isRecord(body)) return;
+  const props = propsOf(collection.recordSchema);
+  for (const [key, value] of Object.entries(body)) {
+    const s = props[key];
+    if (key === collection.idKey || !s || s.readOnly) continue;
+    if (fits(value, s)) record[key] = structuredClone(value);
+  }
+}
+
+/** The record as it is before any change: the detail route's response, or generated from the record schema. */
+function generatedRecord(model: MockModel, input: StatefulInput, collection: Collection, path: string): Record<string, unknown> {
+  if (collection.detailRoute) {
+    const r = respond(model, { ...input, method: 'GET', path, state: undefined, body: undefined, status: undefined });
+    if (isRecord(r.body)) return r.body;
+  }
+  const record = generate(collection.recordSchema, { seed: input.seed, locale: input.locale, key: `GET ${path} 200` });
+  return isRecord(record) ? record : {};
+}
+
+/** The route's success response, with the record projected onto its schema. */
+function success(route: MockRoute, record: Record<string, unknown>, input: RespondInput): MockResult {
+  const response = pickResponse(route.responses);
+  const status = response && response.status < 300 ? response.status : route.method === 'POST' ? 201 : 200;
+  if (!response?.schema || status === 204) return { status, body: undefined, headers: {} };
+  const body = generate(response.schema, { seed: input.seed, locale: input.locale, key: `${route.method} ${input.path} ${status}` });
+  if (!isRecord(body)) return { status, body, headers: {} };
+  const props = propsOf(response.schema);
+  for (const [key, value] of Object.entries(record)) if (props[key] && fits(value, props[key])) body[key] = structuredClone(value);
+  return { status, body, headers: {} };
+}
+
+function propsOf(schema: Schema | undefined): Record<string, Schema> {
+  return (schema?.allOf ? mergeAllOf(schema) : schema)?.properties ?? {};
 }
 
 function findRoute(model: MockModel, method: string, rawPath: string) {

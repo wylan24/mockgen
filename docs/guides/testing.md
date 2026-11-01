@@ -43,8 +43,11 @@ await createMockServer({
   records: 5,             // smaller list collections make assertions easier
   delay: 0,               // add latency to every response, in ms
   locale: 'de',           // names, addresses and phone numbers in German
+  stateful: true,         // POST/PUT/PATCH/DELETE change what later requests return
 });
 ```
+
+With `stateful: true`, call `mock.reset()` in `beforeEach` so each test starts from the same generated data. See [Stateful mode](../../README.md#stateful-mode).
 
 ## Testing error and edge cases
 
