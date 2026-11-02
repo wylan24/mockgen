@@ -13,6 +13,8 @@ npx @wylan24/mockgen serve ./samples/
 
 You get a server on `localhost:4010` that returns schema-valid, human-looking data, returns the same data across restarts, and can be tweaked without writing code.
 
+![mockgen serving the React example: one command, then paging, a detail view and a simulated 500 error, with the request log underneath](docs/demo.gif)
+
 > **Status:** alpha (0.x). It works and is tested against 57 real-world APIs, but options may still change before 1.0. [Feedback and bug reports](https://github.com/wylan24/mockgen/issues/new/choose) are very welcome.
 
 ## Install

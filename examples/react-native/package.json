@@ -9,8 +9,8 @@
   },
   "devDependencies": {
     "@types/react": "~19.3.0",
-    "typescript": "~6.0.3",
-    "@wylan24/mockgen": "^0.1.0-alpha.4"
+    "@wylan24/mockgen": "^0.1.0-alpha.9",
+    "typescript": "~6.0.3"
   },
   "scripts": {
     "mock": "mockgen serve api/openapi.yaml --host 0.0.0.0",
